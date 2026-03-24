@@ -11,14 +11,15 @@ Baselines (v4 scalar phi):
   - RouterEval: mu=0.458
 
 Usage:
-    PYTHONPATH=. ./venv/bin/python -m agents.router.eval_bilinear
-    PYTHONPATH=. ./venv/bin/python -m agents.router.eval_bilinear --benchmark routerbench
-    PYTHONPATH=. ./venv/bin/python -m agents.router.eval_bilinear --checkpoint data/checkpoints/bilinear_phi_best.pt
+    PYTHONPATH=. python -m router.eval_bilinear
+    PYTHONPATH=. python -m router.eval_bilinear --benchmark routerbench
+    PYTHONPATH=. python -m router.eval_bilinear --checkpoint data/checkpoints/bilinear_phi_best.pt
 """
 
 import argparse
 import json
 import logging
+import os
 import pickle
 import time
 from collections import defaultdict
@@ -29,8 +30,8 @@ import numpy as np
 import pandas as pd
 import torch
 
-from agents.router.learned_phi import BilinearPhiEngine, load_trained_engine
-from agents.router.model_registry import ModelRegistry
+from router.learned_phi import BilinearPhiEngine, load_trained_engine
+from router.model_registry import ModelRegistry
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,11 +44,11 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 DEFAULT_CHECKPOINT = DATA_DIR / "checkpoints" / "bilinear_phi_best.pt"
 
-# External data sources
-ROUTERBENCH_0SHOT = Path("/Users/pranavlakherwal/Core/Neural/routerbench/data/hf_dataset/routerbench_0shot.pkl")
-ROUTERBENCH_5SHOT = Path("/Users/pranavlakherwal/Core/Neural/routerbench/data/hf_dataset/routerbench_5shot.pkl")
-ROUTELLM_EVALS = Path("/Users/pranavlakherwal/Core/Neural/RouteLLM/routellm/evals")
-ROUTEREVAL_DATA = Path("/Users/pranavlakherwal/Core/Neural/RouterEval/data/router_dataset")
+# External data sources (set via environment variables or use defaults relative to project)
+ROUTERBENCH_0SHOT = Path(os.getenv("ROUTERBENCH_0SHOT", DATA_DIR / "routerbench" / "routerbench_0shot.pkl"))
+ROUTERBENCH_5SHOT = Path(os.getenv("ROUTERBENCH_5SHOT", DATA_DIR / "routerbench" / "routerbench_5shot.pkl"))
+ROUTELLM_EVALS = Path(os.getenv("ROUTELLM_EVALS", DATA_DIR / "routellm" / "evals"))
+ROUTEREVAL_DATA = Path(os.getenv("ROUTEREVAL_DATA", DATA_DIR / "routereval" / "router_dataset"))
 
 # v4 baselines for comparison
 V4_BASELINES = {
@@ -768,7 +769,7 @@ def main():
     checkpoint_path = Path(args.checkpoint)
     if not checkpoint_path.exists():
         log.error(f"Checkpoint not found: {checkpoint_path}")
-        log.error("Train the model first with: PYTHONPATH=. ./venv/bin/python -m agents.router.train_bilinear")
+        log.error("Train the model first with: PYTHONPATH=. python -m router.train_bilinear")
         return
 
     # Load trained engine

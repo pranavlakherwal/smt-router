@@ -14,7 +14,7 @@ Five gates:
 import logging
 from typing import List
 
-from agents.router.models import Task, Endpoint, GateResult
+from router.models import Task, Endpoint, GateResult
 
 logger = logging.getLogger(__name__)
 

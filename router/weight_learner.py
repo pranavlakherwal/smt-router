@@ -16,10 +16,10 @@ import json
 import logging
 from typing import Dict, List, Optional
 
-from agents.router.models import (
+from router.models import (
     FeedbackSignal, ScoredEndpoint, PhiScore, TaskType,
 )
-from agents.router.config import save_learned_weights, load_learned_weights
+from router.config import save_learned_weights, load_learned_weights
 
 logger = logging.getLogger(__name__)
 

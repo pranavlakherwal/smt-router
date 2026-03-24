@@ -8,8 +8,8 @@ provides lookup by ID or alias.
 import logging
 from typing import Dict, List, Optional
 
-from agents.router.models import Endpoint, EndpointType
-from agents.router.config import (
+from router.models import Endpoint, EndpointType
+from router.config import (
     ALL_ENDPOINTS,
     MODEL_ALIASES,
     LLM_ENDPOINTS,

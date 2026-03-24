@@ -20,10 +20,10 @@ import math
 import logging
 from typing import Dict, List, Optional
 
-from agents.router.models import (
+from router.models import (
     Task, Endpoint, ScoredEndpoint, GateResult, PhiScore,
 )
-from agents.router.config import load_seed_weights, load_learned_weights
+from router.config import load_seed_weights, load_learned_weights
 
 logger = logging.getLogger(__name__)
 

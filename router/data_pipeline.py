@@ -8,9 +8,9 @@ All model IDs are resolved through the canonical ModelRegistry.
 Output: SQLite database at data/bilinear_training.db
 
 Usage:
-    ./venv/bin/python -m agents.router.data_pipeline
-    ./venv/bin/python -m agents.router.data_pipeline --dry-run
-    ./venv/bin/python -m agents.router.data_pipeline --dataset arena_55k
+    PYTHONPATH=. python -m router.data_pipeline
+    PYTHONPATH=. python -m router.data_pipeline --dry-run
+    PYTHONPATH=. python -m router.data_pipeline --dataset arena_55k
 """
 
 import argparse
@@ -24,7 +24,7 @@ from typing import Optional
 
 import pandas as pd
 
-from agents.router.model_registry import ModelRegistry
+from router.model_registry import ModelRegistry
 
 logging.basicConfig(
     level=logging.INFO,

@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List
 
-from agents.router.models import Endpoint, EndpointType, TaskType
+from router.models import Endpoint, EndpointType, TaskType
 
 logger = logging.getLogger(__name__)
 

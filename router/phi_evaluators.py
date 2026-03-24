@@ -12,14 +12,14 @@ import sqlite3
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from agents.router.models import Task, Endpoint, PhiScore, EndpointType
-from agents.router.config import NORMALIZED_DB_PATH
+from router.models import Task, Endpoint, PhiScore, EndpointType
+from router.config import NORMALIZED_DB_PATH
 
 logger = logging.getLogger(__name__)
 
 # Import phi data mapping rules from the data ingester
 try:
-    from agents.data_ingester.phi_mapper import PHI_DATA_RULES
+    from router.phi_mapper import PHI_DATA_RULES
 except ImportError:
     logger.warning("Could not import PHI_DATA_RULES, using empty rules")
     PHI_DATA_RULES = {}

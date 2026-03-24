@@ -11,9 +11,9 @@ Each ablation run shares the same prompt embeddings, only filtering which rows
 are included in training.
 
 Usage:
-    PYTHONPATH=. ./venv/bin/python -m agents.router.leave_one_out
-    PYTHONPATH=. ./venv/bin/python -m agents.router.leave_one_out --source routerbench
-    PYTHONPATH=. ./venv/bin/python -m agents.router.leave_one_out --epochs 30 --patience 8
+    PYTHONPATH=. python -m router.leave_one_out
+    PYTHONPATH=. python -m router.leave_one_out --source routerbench
+    PYTHONPATH=. python -m router.leave_one_out --epochs 30 --patience 8
 """
 
 from __future__ import annotations
@@ -31,11 +31,11 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from agents.router.learned_phi import (
+from router.learned_phi import (
     BilinearPhiEngine,
     PrecomputedEmbeddingDataset,
 )
-from agents.router.model_registry import ModelRegistry
+from router.model_registry import ModelRegistry
 
 logging.basicConfig(
     level=logging.INFO,

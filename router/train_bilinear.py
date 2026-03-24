@@ -1,9 +1,9 @@
 """Train the BilinearPhiEngine on unified training data.
 
 Usage:
-    PYTHONPATH=. ./venv/bin/python -m agents.router.train_bilinear
-    PYTHONPATH=. ./venv/bin/python -m agents.router.train_bilinear --epochs 10 --batch-size 128
-    PYTHONPATH=. ./venv/bin/python -m agents.router.train_bilinear --dry-run
+    PYTHONPATH=. python -m router.train_bilinear
+    PYTHONPATH=. python -m router.train_bilinear --epochs 10 --batch-size 128
+    PYTHONPATH=. python -m router.train_bilinear --dry-run
 """
 
 import argparse
@@ -14,8 +14,8 @@ from pathlib import Path
 
 import torch
 
-from agents.router.learned_phi import BilinearPhiEngine, BilinearTrainer
-from agents.router.model_registry import ModelRegistry
+from router.learned_phi import BilinearPhiEngine, BilinearTrainer
+from router.model_registry import ModelRegistry
 
 logging.basicConfig(
     level=logging.INFO,
@@ -59,7 +59,7 @@ def main():
     if args.dry_run:
         log.info("\n=== Dry Run: Loading data only ===")
         from sentence_transformers import SentenceTransformer
-        from agents.router.learned_phi import build_precomputed_datasets
+        from router.learned_phi import build_precomputed_datasets
 
         prompt_encoder = SentenceTransformer("all-mpnet-base-v2")
         cache_path = DATA_DIR / "embedding_cache.pt"

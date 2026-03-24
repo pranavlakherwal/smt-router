@@ -17,16 +17,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from agents.router.models import (
+from router.models import (
     Task, Endpoint, ScoredEndpoint, RoutingDecision,
     FeedbackSignal, TaskType,
 )
-from agents.router.config import PIPELINE
-from agents.router.registry import EndpointRegistry
-from agents.router.gates import GateEvaluator
-from agents.router.phi_evaluators import PhiEvaluatorEngine
-from agents.router.scorer import SMTScorer
-from agents.router.weight_learner import WeightLearner
+from router.config import PIPELINE
+from router.registry import EndpointRegistry
+from router.gates import GateEvaluator
+from router.phi_evaluators import PhiEvaluatorEngine
+from router.scorer import SMTScorer
+from router.weight_learner import WeightLearner
 
 logger = logging.getLogger(__name__)
 
