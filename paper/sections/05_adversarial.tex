@@ -1,0 +1,62 @@
+\section{Adversarial Analysis}
+\label{sec:adversarial}
+
+We analyze three attack vectors against the S(M,T) routing framework and show that existing components provide built-in mitigations.
+
+\subsection{Mode Collapse}
+
+\textbf{Attack.} Without regularization, the router converges to always selecting a single endpoint, ignoring potentially better alternatives for specific task types. This is the standard exploitation-exploration failure in bandit settings.
+
+\textbf{Mitigation.} The entropy regularization term (Equation~\ref{eq:entropy}) directly addresses mode collapse. With $\lambda_0 = 0.5$, the entropy bonus during early routing is comparable in magnitude to score differences between endpoints. For 13 endpoints, $\max H(\pi) = \log 13 \approx 2.56$, so the initial entropy bonus can reach $0.5 \times 2.56 = 1.28$, which dominates typical score separations of 0.1--0.3.
+
+As $\lambda(n)$ decays toward $\lambda_{\min} = 0.01$, the router gradually transitions from exploration to exploitation. Proposition~\ref{prop:entropy} establishes that this decay is fast enough to converge but slow enough to prevent premature commitment. The minimum entropy floor $\lambda_{\min} > 0$ ensures the router never fully degenerates to deterministic selection, maintaining a small probability of exploring alternatives indefinitely.
+
+\subsection{Ranking Instability under Perturbation}
+
+\textbf{Attack.} Small changes in phi function outputs cause large changes in endpoint rankings, making the router unreliable. This is particularly concerning when phi functions are noisy (as documented in Section~\ref{sec:measurement}).
+
+\textbf{Mitigation.} The task-conditional temperature vector $\betavec(T)$ provides stability through two mechanisms:
+
+\begin{enumerate}
+    \item \textbf{Temperature smoothing.} The Boltzmann cost penalty $e^{-\betavec(T) \cdot \mathbf{H}(M)}$ acts as a soft regularizer. For endpoints with similar phi scores, the temperature term breaks ties based on cost, which is a stable, well-measured quantity (unlike benchmark-derived phi values).
+
+    \item \textbf{Task-conditional sensitivity.} Different task types tolerate different levels of score perturbation. A safety-critical medical query should have a high $\beta$ (strong cost tolerance, selecting the best model regardless of price), while a simple formatting task should have a low $\beta$ (preferring cheaper endpoints). This task-conditional structure means ranking instability in one task type does not propagate to others.
+\end{enumerate}
+
+The Product-of-Experts gate layer (Proposition~\ref{prop:poe}) provides additional stability: endpoints that fail hard constraints are eliminated before scoring, removing the most volatile rankings (where a model's score could swing from high to zero depending on whether a gate marginally passes or fails).
+
+\subsection{Weight Manipulation via Feedback}
+
+\textbf{Attack.} An adversary submits systematically biased feedback signals to steer the Robbins-Monro weight updates toward a preferred endpoint. For example, always reporting high quality for a cheap but low-quality model.
+
+\textbf{Mitigation.} Three properties of the learning system limit this attack:
+
+\begin{enumerate}
+    \item \textbf{Decaying step size.} The step size $\alpha_n = 1/(n+1)$ means early feedback has outsized influence, but late feedback has diminishing effect. After 1,000 decisions, each new feedback signal shifts weights by at most $0.1\%$. An adversary arriving late faces prohibitive cost to overcome accumulated honest feedback.
+
+    \item \textbf{Simplex constraint.} The Duchi projection onto $\Delta^{K-1}$ prevents any single weight from being driven to extreme values. Inflating one weight necessarily deflates others, limiting the damage from biased feedback on a single phi function.
+
+    \item \textbf{Gate layer independence.} The binary gates are not affected by weight learning. Even if an adversary successfully manipulates weights to favor a particular model, the gate layer still eliminates that model for tasks where it fails hard constraints. The manipulation cannot override context window limits, format support, or budget constraints.
+\end{enumerate}
+
+\subsection{Summary}
+
+The three attack vectors map to three defense mechanisms already present in the framework:
+
+\begin{table}[h]
+\centering
+\caption{Attack vectors and built-in mitigations.}
+\label{tab:adversarial}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Attack} & \textbf{Defense} & \textbf{Component} \\
+\midrule
+Mode collapse & Entropy regularization & Equation~\ref{eq:entropy} \\
+Ranking instability & Task-conditional $\betavec(T)$ + gates & Equation~\ref{eq:smt} \\
+Weight manipulation & Decaying $\alpha_n$ + simplex + gates & Equation~\ref{eq:rm_update} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These mitigations are not post-hoc patches. They emerge from the framework's multiplicative structure: gates provide hard safety guarantees that soft scoring cannot override, entropy regularization is a standard technique from reinforcement learning \citep{haarnoja2018sac}, and decaying step sizes are inherent to Robbins-Monro convergence \citep{robbins1951stochastic}.

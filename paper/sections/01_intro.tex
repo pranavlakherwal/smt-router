@@ -1,0 +1,29 @@
+\section{Introduction}
+\label{sec:intro}
+
+Language model routing, the problem of selecting the optimal model for a given task, has become a practical necessity. With dozens of models available at different price points, quality levels, and capability profiles, manual selection is intractable. Automated routing promises to reduce costs while maintaining quality by matching tasks to appropriate endpoints.
+
+Existing approaches frame routing as either binary classification (strong vs. weak model) \citep{ong2024routellm}, cascading (try cheap first, escalate if needed) \citep{chen2023frugalgpt}, or learned scoring \citep{hu2024routerbench}. These methods share three limitations: they route only between LLMs, ignoring agents, scripts, and tool-use systems; they use additive scoring functions vulnerable to compensating failures; and they lack formal convergence guarantees.
+
+We present S(M,T), a unified scoring framework that addresses all three:
+
+\begin{equation*}
+\smt = \underbrace{\left[\prod_{j} g_j(M,T)\right]}_{\text{Gates}} \cdot \underbrace{\left[\sum_{i} w_i \cdot \phii(M,T)\right]}_{\text{Compatibility}} \cdot \underbrace{e^{-\betavec(T) \cdot \mathbf{H}(M)}}_{\text{Cost penalty}}
+\end{equation*}
+
+The equation combines three multiplicative components: a Product-of-Experts gate layer that enforces hard constraints (Section~\ref{sec:framework}), a weighted sum of 16 phi compatibility functions capturing different dimensions of model-task fit, and a Boltzmann cost penalty with task-conditional temperature. The multiplicative structure is not decorative: it provably eliminates the equal-scoring vulnerability of additive approaches (Proposition~\ref{prop:poe}).
+
+\paragraph{Theoretical Contributions.}
+We prove convergence under Hajek conditions with logarithmic cooling (Theorem~\ref{thm:hajek}), establish $O(\sqrt{KN\log N})$ regret bounds through contextual bandits reduction (Theorem~\ref{thm:regret}), and demonstrate weight and temperature identifiability under standard rank conditions (Theorems~\ref{thm:weight_id},~\ref{thm:beta_id}). Six orthogonality proofs verify that the 16 phi functions capture non-redundant information (Theorem~\ref{thm:orthogonality}). All 14 results verify at 85--95\% confidence.
+
+\paragraph{The Measurement Gap.}
+A key empirical finding is negative. We ingested 2,764,077 normalized benchmark records across 15,526 models from 7 public datasets (Section~\ref{sec:empirical}). We then attempted 14 measurement designs to ground hand-designed phi functions in this data (Section~\ref{sec:measurement}). All 14 failed due to structural problems: metric scale incomparability, domain transfer breakdown, benchmark contamination, and dimensional collapse.
+
+\paragraph{Learned Phi Functions.}
+However, the measurement gap is specific to interpretable, hand-designed phi functions. We show that replacing the 16 hand-designed phis with 16 learned bilinear forms, trained end-to-end on 740,803 pairwise routing samples, bypasses the measurement gap entirely (Section~\ref{sec:learned_phi}). The BilinearPhiEngine achieves 83.63\% accuracy on RouterBench and AUC 0.8006 on RouteLLM, demonstrating that the weighted-phi architecture produces competitive routing when the learning problem is well-posed. A leave-one-out generalization analysis identifies which training sources matter (RouterBench is critical; MT-Bench and RewardBench are redundant) and which transfer problems remain hard (RouteLLM's binary format resists prediction from other sources). The tradeoff is interpretability: the 16 learned heads carry no semantic labels.
+
+\paragraph{Implementation.}
+The v0.1 router implements S(M,T) across 13 heterogeneous endpoints: 7 LLMs, 3 autonomous agents, 1 script, and 2 MCP tool-use systems (Section~\ref{sec:empirical}). The hand-designed phi functions with literature-informed seed weights serve as the interpretable production interface, while the bilinear engine provides empirical validation. Robbins-Monro online learning adapts weights from routing feedback.
+
+\paragraph{Paper Organization.}
+Section~\ref{sec:background} reviews background on routing, stochastic approximation, and contextual bandits. Section~\ref{sec:framework} defines the S(M,T) equation, gates, phi functions, and seed weights. Section~\ref{sec:convergence} presents convergence, regret, identifiability, and orthogonality results. Section~\ref{sec:adversarial} analyzes adversarial robustness. Section~\ref{sec:measurement} documents the measurement gap. Section~\ref{sec:empirical} describes the data pipeline and implementation. Section~\ref{sec:learned_phi} presents the learned BilinearPhiEngine with benchmark evaluation and generalization analysis. Section~\ref{sec:related} surveys related work. Section~\ref{sec:discussion} discusses limitations and future directions. Section~\ref{sec:conclusion} concludes.

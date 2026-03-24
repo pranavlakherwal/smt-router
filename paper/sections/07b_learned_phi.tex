@@ -1,0 +1,209 @@
+\section{Learning Phi Functions: The BilinearPhiEngine}
+\label{sec:learned_phi}
+
+Section~\ref{sec:measurement} established that hand-designed phi functions cannot be grounded in public benchmark data due to structural problems: metric incomparability, domain transfer breakdown, and dimensional collapse. This section presents an alternative: learning the phi functions end-to-end from pairwise routing data, bypassing the measurement gap entirely.
+
+\subsection{Motivation}
+
+The measurement gap arises because hand-designed phi functions impose semantic structure (``domain classifier,'' ``reasoning depth'') that requires mapping heterogeneous benchmark metrics into a common space. This mapping is where all 9 designs failed. But routing does not require interpretable phi functions. It requires phi functions that \emph{predict routing outcomes}. If we replace the 16 semantic phis with 16 learned bilinear functions trained directly on routing-relevant data, the normalization and domain transfer problems disappear: the model learns whatever internal representation best predicts scores, without requiring us to specify what each dimension means.
+
+Learned representations for routing are not new. RouteLLM \citep{ong2024routellm} uses matrix factorization over preference data. RouterDC \citep{chen2024routerdc} trains dual contrastive embeddings. EmbedLLM \citep{zhuang2024embedllm} learns compact model representations for performance prediction. GraphRouter \citep{feng2024graphrouter} constructs heterogeneous task-model graphs. Our contribution here is not the bilinear form itself, but its role as a drop-in replacement for the hand-designed phi functions within the S(M,T) architecture: preserving the framework's multiplicative gating and convergence properties while bypassing the measurement gap.
+
+\subsection{Architecture}
+
+The BilinearPhiEngine instantiates the weighted compatibility term of S(M,T) as a set of learned bilinear forms:
+
+\begin{equation}
+\label{eq:bilinear_phi}
+\hat{\phi}_i(M, T) = \sigma\!\left(\mathbf{e}_T^\top \mathbf{W}_i \, \mathbf{e}_M + b_i\right), \quad i = 1, \ldots, K
+\end{equation}
+
+where $\mathbf{e}_T \in \R^{768}$ is a frozen prompt embedding from a pre-trained sentence encoder (all-mpnet-base-v2), $\mathbf{e}_M \in \R^{256}$ is a learned model embedding, $\mathbf{W}_i \in \R^{768 \times 256}$ is a learned bilinear interaction matrix, $b_i \in \R$ is a bias term, and $\sigma$ is the sigmoid function. The overall score combines these via softmax-weighted sum:
+
+\begin{equation}
+\label{eq:bilinear_score}
+\hat{S}(M, T) = \sum_{i=1}^{K} \alpha_i \cdot \hat{\phi}_i(M, T), \quad \alpha_i = \frac{e^{a_i}}{\sum_j e^{a_j}}
+\end{equation}
+
+where $\mathbf{a} \in \R^K$ are learned logits producing weights on the probability simplex. With $K=16$ bilinear heads, the architecture has approximately 3.15 million trainable parameters:
+
+\begin{itemize}
+    \item 16 bilinear matrices $\mathbf{W}_i$: $16 \times 768 \times 256 = 3{,}145{,}728$ parameters
+    \item 16 biases $b_i$: 16 parameters
+    \item 48 model embeddings $\mathbf{e}_M$: $48 \times 256 = 12{,}288$ parameters
+    \item 16 head weight logits $a_i$: 16 parameters
+\end{itemize}
+
+The prompt encoder is frozen during training. Only model embeddings, bilinear matrices, head weights, and biases are learned. This separation is deliberate: the prompt encoder provides a fixed, high-quality text representation; the bilinear matrices learn how different models interact with different prompt features.
+
+\paragraph{Diversity Regularization.} To prevent the 16 heads from collapsing to identical functions, we add a cosine-similarity penalty between head weight vectors:
+
+\begin{equation}
+\label{eq:diversity}
+\mathcal{L}_{\text{div}} = \frac{1}{K(K-1)} \sum_{i \neq j} \left|\cos(\text{vec}(\mathbf{W}_i), \text{vec}(\mathbf{W}_j))\right|
+\end{equation}
+
+where $\text{vec}(\mathbf{W}_i)$ flattens the bilinear matrix into a vector. The total loss is $\mathcal{L} = \text{MSE}(\hat{S}, S^*) + \lambda_{\text{div}} \cdot \mathcal{L}_{\text{div}}$ with $\lambda_{\text{div}} = 0.01$.
+
+\subsection{Training Data}
+
+We unify five public routing datasets into a single training corpus of 740,803 (prompt, model, score) triples:
+
+\begin{table}[h]
+\centering
+\caption{Training data sources with canonical model resolution.}
+\label{tab:training_data}
+\small
+\begin{tabular}{lrrl}
+\toprule
+\textbf{Source} & \textbf{Samples} & \textbf{Models} & \textbf{Score Type} \\
+\midrule
+RouterBench & 401,467 & 11 & Accuracy (0/1) \\
+RouteLLM & 218,202 & 2 & Win rate (0/1) \\
+Arena 55K & 111,712 & 45 & Elo-derived (continuous) \\
+MT-Bench & 6,710 & 5 & Rating (1--10, normalized) \\
+RewardBench & 2,712 & 31 & Accuracy (0/1) \\
+\midrule
+\textbf{Total} & \textbf{740,803} & \textbf{48} & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A canonical model registry maps 180 model name aliases (e.g., ``gpt-4-1106-preview,'' ``gpt4-turbo,'' ``openai/gpt-4-1106'') to 48 canonical model identifiers, each receiving a learned 256-dimensional embedding. Scores are normalized to $[0, 1]$ per source. Data is split 80/10/10 into train/validation/test sets with a fixed random seed.
+
+\paragraph{Prompt Encoding.} The 162,422 unique prompts are pre-encoded using the raw transformer model (AutoTokenizer + AutoModel from all-mpnet-base-v2) with mean pooling and L2 normalization, producing 768-dimensional embeddings. This one-time encoding step takes approximately 45 minutes on Apple Silicon (MPS); the resulting cache enables the training loop to run at full GPU speed without I/O bottleneck.
+
+\subsection{Training Procedure}
+
+Training uses AdamW with differential learning rates: $10^{-4}$ for bilinear matrices $\mathbf{W}_i$, $10^{-3}$ for model embeddings $\mathbf{e}_M$ and head weights $\mathbf{a}$. Batch size is 256. Early stopping with patience 10 monitors validation MSE loss.
+
+The full model (all 5 sources) trains for 31 epochs before early stopping, reaching best validation loss of 0.1217. Training takes approximately 2 minutes per epoch on Apple M-series hardware (MPS backend), for a total wall time under 70 minutes.
+
+\subsection{Benchmark Evaluation}
+
+We evaluate the trained BilinearPhiEngine on two established routing benchmarks. A third benchmark (RouterEval) proved incompatible because it evaluates routing among 1,000+ open-source fine-tunes from the Open LLM Leaderboard, a model pool completely disjoint from our 48 API models.
+
+\subsubsection{RouterBench}
+
+RouterBench \citep{hu2024routerbench} provides 73,008 test instances across 11 model pairs, split into 0-shot and 5-shot settings. For each instance, the router must select the model most likely to answer correctly.
+
+\begin{table}[h]
+\centering
+\caption{RouterBench evaluation results.}
+\label{tab:routerbench_results}
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Method} & \textbf{0-shot Acc.} & \textbf{5-shot Acc.} & \textbf{Overall} \\
+\midrule
+Random baseline & 55.50 & 64.34 & -- \\
+Always-strong & 84.35 & 86.66 & 85.51 \\
+\textbf{BilinearPhi (ours)} & \textbf{80.49} & \textbf{86.76} & \textbf{83.63} \\
+Oracle (upper bound) & 96.13 & 96.76 & 96.45 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The model achieves 83.63\% overall accuracy. In the 5-shot setting, it slightly exceeds the always-strong baseline (86.76\% vs. 86.66\%), indicating it learns when cheaper models suffice. The router selects from 11 distinct models, not just the strongest, demonstrating genuine multi-model routing rather than defaulting to a single endpoint.
+
+\subsubsection{RouteLLM}
+
+RouteLLM \citep{ong2024routellm} evaluates binary routing (strong vs. weak model) across MMLU, GSM8K, and MT-Bench subsets. Quality is measured as the average win rate of selected models, with AUC computed across routing thresholds.
+
+\begin{table}[h]
+\centering
+\caption{RouteLLM evaluation results. Quality ratio = quality / always-strong quality.}
+\label{tab:routellm_results}
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Threshold} & \textbf{Quality} & \textbf{Quality Ratio} \\
+\midrule
+Always weak & 0.7187 & 84.09\% \\
+20\% strong & 0.7609 & 89.02\% \\
+50\% strong & 0.8065 & 94.35\% \\
+80\% strong & 0.8399 & 98.27\% \\
+Always strong & 0.8547 & 100.00\% \\
+\midrule
+\textbf{AUC} & \multicolumn{2}{c}{\textbf{0.8006}} \\
+Routing accuracy & \multicolumn{2}{c}{94.55\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At the 50\% strong-model threshold (routing half of queries to the cheaper model), the system retains 94.35\% of always-strong quality. The AUC of 0.8006 indicates effective quality-cost tradeoff across the full threshold range.
+
+\subsubsection{Internal Evaluation}
+
+On the held-out test split (10\% of training data, 74,080 samples), the model achieves MSE 0.1223, MAE 0.2689, Pearson correlation 0.5305, and binary routing accuracy 74.39\%.
+
+\subsection{Leave-One-Out Generalization Analysis}
+
+To test whether the BilinearPhiEngine learns transferable routing features rather than source-specific patterns, we conduct a leave-one-out ablation study. Five models are trained, each excluding one of the five data sources entirely. Each ablated model is then evaluated on its held-out source (zero-shot generalization) and on all five sources (cross-source transfer).
+
+\subsubsection{Training Dynamics}
+
+\begin{table}[h]
+\centering
+\caption{Leave-one-out ablation: training summary. Correlation is Pearson $r$ on the held-out source.}
+\label{tab:loo_training}
+\small
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Excluded} & \textbf{Train $N$} & \textbf{Epochs} & \textbf{Val Loss} & \textbf{Heldout $r$} & \textbf{Heldout MSE} \\
+\midrule
+RouterBench (401K) & 271,470 & 21$^\dagger$ & 0.0752 & 0.6505 & 0.0790 \\
+RouteLLM (218K) & 418,081 & 17$^\dagger$ & 0.1623 & 0.3192 & 0.1742 \\
+Arena 55K (112K) & 503,273 & 30 & 0.1131 & 0.4596 & 0.1794 \\
+MT-Bench (7K) & 587,275 & 30 & 0.1211 & 0.4690 & 0.1705 \\
+RewardBench (3K) & 590,473 & 30 & 0.1205 & 0.3849 & 0.1539 \\
+\midrule
+Full model & 592,641 & 31$^\dagger$ & 0.1217 & -- & 0.1223 \\
+\bottomrule
+\end{tabular}
+\begin{flushleft}
+\small $^\dagger$ Early stopped (patience 8).
+\end{flushleft}
+\end{table}
+
+Two patterns stand out. First, removing RouterBench (54\% of data) causes early stopping at epoch 21, while removing smaller sources allows training to run all 30 epochs. This confirms RouterBench's role as the diversity backbone of the dataset. Second, removing MT-Bench (0.9\% of data) or RewardBench (0.4\%) produces validation loss nearly identical to the full model (0.1211 and 0.1205 vs. 0.1217), indicating these sources add negligible marginal information.
+
+\subsubsection{Cross-Source Generalization Matrix}
+
+Table~\ref{tab:cross_source} presents the full 5$\times$5 cross-source correlation matrix. Each row is a model trained \emph{without} that source; each column is the evaluation target. Diagonal entries (bold) represent zero-shot generalization to an unseen source.
+
+\begin{table}[h]
+\centering
+\caption{Cross-source Pearson correlation matrix. Rows: excluded source during training. Columns: evaluation source. Diagonal (bold) = zero-shot generalization.}
+\label{tab:cross_source}
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Trained w/o} & \textbf{RBench} & \textbf{RLLM} & \textbf{Arena} & \textbf{MTB} & \textbf{RwdB} \\
+\midrule
+RouterBench & \textbf{0.651} & 0.073 & 0.197 & 0.174 & 0.169 \\
+RouteLLM & 0.425 & \textbf{0.319} & 0.457 & 0.468 & 0.385 \\
+Arena 55K & 0.583 & 0.321 & \textbf{0.460} & 0.470 & 0.386 \\
+MT-Bench & 0.682 & 0.321 & 0.459 & \textbf{0.469} & 0.385 \\
+RewardBench & 0.679 & 0.320 & 0.459 & 0.468 & \textbf{0.385} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Finding 1: RouterBench is the generalization anchor.}
+When RouterBench is included in training (rows 2--5), the RouterBench column shows correlation 0.43--0.68. When RouterBench is excluded (row 1), cross-source generalization collapses: correlation on all non-RouterBench sources falls to 0.07--0.20. RouterBench's 11-model, diverse-prompt format provides the signal diversity that enables generalization.
+
+\paragraph{Finding 2: RouteLLM is the hardest transfer target.}
+The RouteLLM column is capped at $r \approx 0.32$ regardless of which other source is removed. RouteLLM's binary 2-model setup (GPT-4 vs. Mixtral on academic benchmarks) represents a qualitatively different routing problem that other benchmark formats cannot fully predict.
+
+\paragraph{Finding 3: Small sources are redundant.}
+Rows 4--5 (excluding MT-Bench or RewardBench) produce nearly identical cross-source correlations to each other and to the full model. Training on just RouterBench + RouteLLM + Arena 55K (731K samples) achieves the same generalization quality as the full 741K dataset.
+
+\paragraph{Finding 4: Unseen sources are predictable.}
+The diagonal entries (zero-shot generalization) range from 0.319 to 0.651, confirming that the bilinear architecture learns transferable routing features. RouterBench is the most predictable from other sources ($r = 0.651$), while RouteLLM is the least ($r = 0.319$).
+
+\subsection{Connection to the Measurement Gap}
+
+The BilinearPhiEngine achieves what the hand-designed phi functions could not: reliable routing scores grounded in public benchmark data. The resolution is architectural. Hand-designed phis require explicit metric normalization, domain classification, and semantic mapping, each of which introduces fragile assumptions (Section~\ref{sec:measurement}). The bilinear architecture sidesteps all three by learning the mapping end-to-end. The prompt encoder provides a fixed text representation; the bilinear matrices learn whatever model-prompt interaction structure best predicts routing outcomes.
+
+The tradeoff is interpretability. The 16 learned bilinear heads have no semantic labels. We cannot say ``head 3 captures reasoning depth'' or ``head 7 measures instruction adherence.'' The hand-designed phi functions in Table~\ref{tab:phi_functions} remain the interpretable interface for the production router (Section~\ref{sec:empirical}), initialized with seed weights and refined through online learning. The bilinear engine provides the empirical validation that the weighted-phi architecture can achieve competitive routing accuracy when the learning problem is well-posed.

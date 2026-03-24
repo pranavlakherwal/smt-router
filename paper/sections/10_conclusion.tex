@@ -1,0 +1,12 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We presented S(M,T), a unified scoring framework for routing queries to optimal endpoints. The framework combines multiplicative gating, weighted compatibility functions, and Boltzmann cost penalties into a single equation with provable convergence ($O(\sqrt{KN\log N})$ regret), parameter identifiability, and adversarial robustness. It generalizes beyond LLM-to-LLM routing to cover agents, scripts, and tool-use systems through a common scoring interface.
+
+Three empirical findings define the paper's contribution. First, the measurement gap: all 14 attempts to ground hand-designed phi functions in 2.76 million normalized benchmark records failed due to structural problems (metric incomparability, domain transfer breakdown, dimensional collapse). Second, the learned resolution: replacing the 16 hand-designed phis with 16 learned bilinear forms trained on 740,803 pairwise routing samples achieves 83.63\% accuracy on RouterBench and AUC 0.8006 on RouteLLM, retaining 94.35\% of always-strong quality at 50\% cost reduction. Third, a scaling ablation: a 4.63$\times$ larger model (14.6M parameters) trained on expanded data with progressive architectural additions underperforms the compact V1 on every benchmark, establishing that data quality dominates model capacity for learned routing.
+
+The measurement gap thus separates interpretable from learned routing, not theory from practice. Hand-designed phi functions that an operator can audit and explain cannot be grounded in public benchmark data. Learned bilinear forms that carry no semantic labels can. The tradeoff between interpretability and performance is the central tension this paper identifies, and narrowing that tradeoff is the most promising direction for future work.
+
+The v0.1 router is operational, routing across 13 heterogeneous endpoints with literature-informed seed weights for the interpretable interface and bilinear heads for empirical validation.
+
+\paragraph{AI Disclosure.} AI tools developed by Anthropic were used to assist with writing, code development, and experimental analysis in the preparation of this work. All research direction, experimental design, and intellectual contributions are the author's own.

@@ -1,0 +1,114 @@
+\subsection{Scaling Ablation: BilinearPhiEngine V3}
+\label{sec:v3_ablation}
+
+The BilinearPhiEngine V1 (Section~\ref{sec:learned_phi}) was trained on a single data corpus with a compact architecture (3.15M parameters, $K=16$ heads, $D_{\text{model}}=256$). A natural question is whether scaling the architecture with more data, more models, and additional inductive biases improves routing quality. We designed BilinearPhiEngine V3 to test this hypothesis. The answer is no: V3 underperforms V1 on every benchmark.
+
+\subsubsection{V3 Architecture and Training}
+
+V3 scales three dimensions of V1 simultaneously:
+
+\begin{enumerate}
+    \item \textbf{Parameter expansion.} $K=24$ bilinear heads (vs.\ 16), $D_{\text{model}}=768$ (vs.\ 256), producing bilinear matrices $\mathbf{W}_i \in \R^{768 \times 768}$. Total parameters: 14.6M (4.63$\times$ V1).
+    \item \textbf{Data expansion.} Training on a V2 database (4.0 GB, 3.86M rows from 10 additional preference datasets including UltraFeedback, Nectar, WildBench, HelpSteer2, and HH-RLHF). After filtering unrecognized model IDs (53 of 101 models), 1.98M usable rows with 356,358 unique prompts remain (2.2$\times$ the unique prompts in V1).
+    \item \textbf{Architectural additions.} Three new components added via progressive training stages: task-type conditioning embeddings (Stage~3), multi-head cross-attention between prompt and model representations (Stage~4), and metadata feature integration including source and score normalization information (Stage~5).
+\end{enumerate}
+
+Training uses a 5-stage progressive schedule on an A100 80GB GPU: (1) frozen prompt encoder with bilinear matrices only, (2) full end-to-end fine-tuning including unfreezing the sentence encoder, (3) task conditioning, (4) cross-attention, (5) metadata features. Each stage initializes from the previous stage's best checkpoint.
+
+\subsubsection{Results}
+
+We evaluate the two most informative checkpoints: Stage~2 (the first fully trained model, before architectural additions) and Stage~5 (the final model with all additions).
+
+\paragraph{External Benchmarks.}
+
+\begin{table}[h]
+\centering
+\caption{V1 vs.\ V3 on external routing benchmarks. V1 outperforms all V3 variants. $\Delta$ is percentage points relative to V1.}
+\label{tab:v3_external}
+\small
+\begin{tabular}{lcccccc}
+\toprule
+& \multicolumn{3}{c}{\textbf{RouterBench}} & \multicolumn{3}{c}{\textbf{RouteLLM}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+\textbf{Model} & \textbf{0-shot} & \textbf{5-shot} & \textbf{Overall} & \textbf{AUC} & \textbf{Q@50\%} & \textbf{Rt.\ Acc.} \\
+\midrule
+\textbf{V1} (3.15M) & \textbf{80.49} & \textbf{86.76} & \textbf{83.63} & \textbf{0.8006} & \textbf{0.9435} & \textbf{94.55} \\
+V3-S2 (14.6M) & 79.18 & 86.70 & 82.94 & 0.7972 & 0.8020 & 93.10 \\
+V3-S5 (14.6M) & 77.44 & 85.51 & 81.47 & 0.7973 & 0.8022 & 92.79 \\
+\midrule
+$\Delta$ (best V3) & $-1.31$ & $-0.06$ & $-0.69$ & $-0.0033$ & $-0.1413$ & $-1.45$ \\
+$\Delta$ (worst V3) & $-3.05$ & $-1.25$ & $-2.16$ & $-0.0034$ & $-0.1415$ & $-1.76$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+On RouterBench, V3 Stage~2 loses 0.69 percentage points overall, while Stage~5 loses 2.16 points. On RouteLLM, both V3 stages lose approximately 0.003 AUC. The quality-at-50\%-strong metric shows a larger gap: V3 retains only 80.2\% of always-strong quality at 50\% cost (vs.\ V1's 94.4\%), suggesting degraded confidence calibration.
+
+\paragraph{Task-Stratified Analysis.}
+
+\begin{table}[h]
+\centering
+\caption{RouterBench accuracy by task type. V3-S2 is the best V3 variant. Bold indicates the best result per task.}
+\label{tab:v3_task}
+\small
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Task Type} & \textbf{V3-S2 (\%)} & \textbf{V3-S5 (\%)} & \textbf{$N$} \\
+\midrule
+Math & 94.39 & \textbf{94.37} & 15{,}547 \\
+Reasoning & 81.12 & 79.03 & 44{,}922 \\
+Safety & 79.79 & 79.04 & 1{,}064 \\
+Code & 77.80 & \textbf{78.00} & 500 \\
+Factual QA & 77.95 & 76.65 & 6{,}616 \\
+Instr.\ following & 75.55 & 73.36 & 687 \\
+Conversation & 72.88 & 70.77 & 520 \\
+Writing & 68.05 & 67.67 & 3{,}152 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+V3 is competitive on math tasks (94.4\%), which have unambiguous correctness labels. Performance degrades most on tasks requiring subjective quality judgments: writing (68\%), conversation (71--73\%), and instruction following (74--76\%). This pattern is consistent with the V2 training data containing noisier labels from preference-based datasets.
+
+\paragraph{Internal Evaluation.}
+
+On the held-out V2 test split (198,304 samples), V3 shows near-zero or negative correlation with ground truth:
+
+\begin{table}[h]
+\centering
+\caption{Internal evaluation on V2 test data. V1 baseline computed on V1 test split.}
+\label{tab:v3_internal}
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & \textbf{Pearson $r$} & \textbf{MSE} & \textbf{MAE} & \textbf{Binary Acc.\ (\%)} \\
+\midrule
+V1 & 0.5305 & 0.1223 & 0.2689 & 74.39 \\
+V3-S2 & $-0.0483$ & 0.1365 & 0.3188 & 57.99 \\
+V3-S5 & $-0.0335$ & 0.1357 & 0.3162 & 58.09 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The internal correlation collapse ($r = 0.53 \to r \approx -0.04$) is more dramatic than the external benchmark regressions. This divergence has a structural explanation: the V2 database labels incorporate preference-based scores from datasets with different quality semantics than V1's benchmark-accuracy scores. V3 learned the V2 label distribution, but that distribution is not well-aligned with the actual model quality ranking.
+
+\subsubsection{Why Scaling Failed: Analysis}
+
+Four factors explain V3's underperformance:
+
+\paragraph{1. Label distribution shift.} The V2 database merged 10 new preference datasets with the original 5 benchmark sources. Of 101 model IDs in V2, 53 were unrecognized by the canonical registry, causing 1.87M rows (49\% of total) to be skipped. The surviving data has different score semantics: preference-based ``win rate'' labels from UltraFeedback and Nectar encode relative quality between model pairs, not absolute task accuracy. Training on these labels teaches V3 to predict pairwise preferences rather than absolute routing scores.
+
+\paragraph{2. Sparse model coverage.} V3's embedding table covers 93 models (vs.\ V1's 48), but the new models have far fewer training examples. The V2 database has 356K unique prompts spread across 93 models, versus V1's 162K prompts across 48 models. Per-model embedding quality degrades with sparse coverage, and the embedding space becomes undertrained for tail models.
+
+\paragraph{3. Progressive training instability.} Each stage inherits and potentially amplifies errors from its predecessor. Stage~5 (the final model) performs worse than Stage~2 (the first fully trained model) on RouterBench ($81.47\%$ vs.\ $82.94\%$), confirming that the architectural additions (task conditioning, cross-attention, metadata) degraded rather than improved routing quality. This is characteristic of overfitting to training artifacts rather than learning generalizable routing features.
+
+\paragraph{4. Architectural overparameterization.} With 14.6M parameters trained on 1.98M usable samples, V3 has a parameter-to-sample ratio of 7.4:1. V1's ratio is 4.3:1 with cleaner labels. The bilinear matrices $\mathbf{W}_i \in \R^{768 \times 768}$ have 590K parameters each (vs.\ V1's 197K), providing excess capacity that absorbed noise in the V2 labels rather than learning better routing representations.
+
+\subsubsection{Implications}
+
+The V3 ablation establishes that the original V1 architecture is not capacity-limited. The bilinear routing problem, at least at the current scale of 48--93 models, does not benefit from larger embedding dimensions, more bilinear heads, or additional architectural components. V1's 3.15M parameters with clean labels outperform V3's 14.6M parameters with noisy labels on every metric. This result has two practical implications.
+
+First, \textbf{data quality dominates model capacity} for learned routing. The path to better routing accuracy runs through cleaner, more consistent training labels, not larger models. This aligns with the measurement gap finding (Section~\ref{sec:measurement}): the bottleneck is grounding quality signals, not the capacity of the model consuming those signals.
+
+Second, \textbf{progressive architectural additions provide diminishing returns} when the base training signal is noisy. Task conditioning, cross-attention, and metadata features all assume the training labels contain structured information that can be decomposed along these axes. When labels are inconsistent, these additions fit noise rather than signal.
+
+The V3 experiment thus serves as a controlled counter-test to the V1 results. V1's performance is not an accident of small-scale evaluation. A systematic attempt to improve it through data scaling, parameter scaling, and architectural enrichment produced consistently worse results. The compact bilinear architecture, trained on well-curated data, remains the strongest configuration.

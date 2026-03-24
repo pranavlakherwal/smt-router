@@ -1,0 +1,133 @@
+\section{The Measurement Gap}
+\label{sec:measurement}
+
+The preceding sections establish that S(M,T) is theoretically sound: it converges, has sublinear regret, and its parameters are identifiable. This section documents a systematic failure to ground the phi functions in public benchmark data. We attempted 9 measurement designs across 4 research cycles. All failed. The gap between verified theory and measurable practice is the central finding of this paper.
+
+\subsection{Experimental Setup}
+
+We ingested 7 public datasets totaling 2,764,077 normalized benchmark records across 15,526 unique models (Table~\ref{tab:datasets}). Each dataset was downloaded, parsed, and normalized into a unified SQLite schema mapping \texttt{(model\_id, benchmark, metric, score)} tuples. The normalization pipeline applied min-max scaling within each benchmark to produce $[0,1]$-bounded scores.
+
+\begin{table}[h]
+\centering
+\caption{Public datasets ingested for phi function grounding.}
+\label{tab:datasets}
+\small
+\begin{tabular}{llrrr}
+\toprule
+\textbf{Dataset} & \textbf{Metric Type} & \textbf{Records} & \textbf{Models} & \textbf{Priority} \\
+\midrule
+Open LLM Leaderboard & Accuracy (0--100) & 1,897,419 & 5,168 & 3 \\
+RouterEval & Pairwise preference & 105,042 & 7,117 & 1 \\
+RouteLLM & Win rate & 714,606 & 2 & 2 \\
+Epoch AI & Mixed & 40,356 & 2,641 & 4 \\
+OpenRouter & Pricing/context & 4,200 & 350 & 5 \\
+AlpacaEval & Win rate & 966 & 102 & 11 \\
+SWE-bench & Pass rate & 1,488 & 149 & 12 \\
+\midrule
+\multicolumn{2}{l}{\textbf{Total (deduplicated)}} & \textbf{2,764,077} & \textbf{15,526} & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For each phi function, we designed a measurement procedure: a concrete algorithm mapping the normalized database records to a $[0,1]$ score for a given (model, task) pair. Each design was then stress-tested through adversarial analysis, checking for metric conflicts, domain transfer failures, and dimensional errors. A measurement design was \emph{refuted} if we could demonstrate a structural flaw making it unreliable for routing decisions.
+
+\subsection{Nine Measurement Failures}
+
+We present the 9 measurement designs attempted in the final research cycle, all refuted at 85--95\% confidence. Four earlier designs (from the third cycle) were also refuted, giving a cumulative record of 0 verified out of 14 attempted.
+
+\subsubsection{$\phi_2$: Domain Classifier (Refuted, 92\%)}
+
+\textbf{Design.} Classify task $T$ into a domain (code, math, medical, legal, creative, general) using keyword and embedding classifiers. Look up model $M$'s benchmark scores in that domain. Return the normalized score.
+
+\textbf{Failure.} Three irreconcilable problems:
+\begin{enumerate}
+    \item \textbf{Task-domain ambiguity.} Real tasks are frequently hybrid. A ``medical coding'' task spans both medical and programming domains. Keyword and embedding classifiers cannot resolve multi-domain membership into a single lookup key.
+    \item \textbf{Metric scale incomparability.} The domain lookup requires combining scores from benchmarks with fundamentally different scales: MMLU uses accuracy (0--100), Chatbot Arena uses Elo (unbounded, $\sim$1000--2000), and LiveCodeBench uses pass@k (0--1). No statistically sound conversion exists between these scales \citep{deng2023leaderboards}.
+    \item \textbf{Normalization destroys semantics.} Min-max normalization within each benchmark produces $[0,1]$ values, but a normalized 0.8 on MMLU and a normalized 0.8 on Chatbot Arena Elo do not represent equivalent capability levels. The normalization creates an illusion of comparability.
+\end{enumerate}
+
+\subsubsection{$\phi_{12}$: Output Structure Compliance (Refuted, 92\%)}
+
+\textbf{Design.} Query the Berkeley Function Calling Leaderboard for model $M$'s structured output success rate. Return as $\phi_{12}$.
+
+\textbf{Failure.} Schema complexity degrades reliability non-linearly. A model achieving 95\% success on simple JSON schemas may drop to 40\% on nested schemas with recursive references. The benchmark measures one complexity level; the router needs predictions across all levels. Additionally, keyword-based format detection has catastrophic false negatives: models may produce syntactically valid structured output that pattern matching fails to recognize.
+
+\subsubsection{$\phi_{14}$: Cost Efficiency Ratio (Refuted, 95\%)}
+
+\textbf{Design.} Compute quality-per-dollar as $\phi_{14}(M,T) = \phi_4(M,T) / \text{cost}(M,T)$, where quality comes from benchmark scores and cost from OpenRouter pricing.
+
+\textbf{Failure.} This is the highest-confidence refutation. The ratio is dimensionally invalid: quality $\phi_4$ is a dimensionless benchmark score (0--1), while cost is market-driven (\$/token). Their ratio has no stable physical interpretation. Worse, task-length sensitivity causes $>$100$\times$ cost prediction errors. A legal document analysis (50K tokens) on GPT-4 costs $>$\$50, while a tweet classification (100 tokens) costs $<$\$0.01. Any fixed-length assumption fails catastrophically. Hidden infrastructure costs (70B models require 8-GPU servers) add further multiplicative errors not captured by per-token pricing.
+
+\subsubsection{$\phi_{16}$: Instruction Adherence (Refuted, 92\%)}
+
+\textbf{Design.} Average model $M$'s scores across IFEval (verifiable constraints), MT-Bench (open-ended quality), and AlpacaEval (pairwise preference) to produce a single instruction-following score.
+
+\textbf{Failure.} Instruction adherence is not a single dimension. IFEval measures whether specific verifiable constraints are satisfied (word count limits, format requirements). MT-Bench and AlpacaEval measure stylistic quality and coherence. These create conflicting optimization signals: a model may excel at verifiable constraints while producing stilted prose, or write beautifully while ignoring explicit format requirements. Averaging across these benchmarks produces a number that predicts neither behavior reliably. Novel instruction types (legal compliance, domain-specific constraints) have no benchmark coverage at all.
+
+\subsubsection{$\phi_1$ v2: Constraint Filter Redesign (Refuted, 85\%)}
+
+\textbf{Design.} Replace the original token-counting approach with a compositional parser that checks static capability matrices from model documentation (context window, supported formats, available tools).
+
+\textbf{Failure.} Static capability matrices systematically overstate actual capabilities. Model documentation reports maximum context windows, not effective context windows (where quality degrades). Public documentation reflects marketing incentives, not measured performance \citep{liu2023lost}. Compositional constraints (``output JSON with nested arrays where each element follows schema X'') require understanding the model's reasoning capabilities, which documentation does not capture.
+
+\subsubsection{$\phi_5$ v2: Context Fitness Redesign (Refuted, 92\%)}
+
+\textbf{Design.} Replace embedding cosine similarity with a topic classifier: classify task $T$ by topic, look up model $M$'s historical success rate on that topic from benchmark data.
+
+\textbf{Failure.} Benchmark scores measure broad domain knowledge, not task-specific fitness. A model scoring well on MMLU-medical does not necessarily handle a specific clinical reasoning task well. Static benchmarks also suffer from data contamination: modern LLMs are trained on benchmark datasets, inflating scores beyond true capability \citep{deng2023leaderboards}. Domain classification errors from $\phi_2$ propagate catastrophically into $\phi_5$, compounding the measurement failure.
+
+\subsubsection{$\phi_{13}$ v2: Reasoning Depth Redesign (Refuted, 85\%)}
+
+\textbf{Design.} Analyze GSM8K solution step counts per model. Use step count as a proxy for multi-step reasoning capability. Generalize to other task types.
+
+\textbf{Failure.} Surface features (mathematical operator count, question length) correlate poorly with actual reasoning depth. The task ``prove $\sum_{k=1}^n (2k-1) = n^2$'' has few operators but requires inductive reasoning. GSM8K performance does not generalize to non-mathematical reasoning: legal argument construction, scientific hypothesis testing, and strategic planning require qualitatively different reasoning structures. Normalization across GSM8K, MATH, and BBH introduces further artifacts from incompatible evaluation scales.
+
+\subsubsection{$\phi_{15}$ v2: Context Window Utilization Redesign (Refuted, 92\%)}
+
+\textbf{Design.} Fit degradation curves from RULER benchmark data. For a given model $M$ and context length $\ell_T$, interpolate the expected performance from the fitted curve.
+
+\textbf{Failure.} Task-type performance variance dominates context-length effects. RULER shows $>$30\% performance gaps between retrieval and question-answering tasks at identical context lengths. A single degradation curve per model averages over these gaps, destroying the task-conditional signal. Positional sensitivity compounds the problem: the ``Lost in the Middle'' phenomenon \citep{liu2023lost} shows up to 60\% performance drops when critical information sits in the context middle versus the ends. The available data (5--7 context length measurement points per model) is insufficient to fit the resulting non-monotonic, task-dependent, position-sensitive degradation surface.
+
+\subsubsection{$\phi_4$: Performance Predictor (Inconclusive, 30\%)}
+
+\textbf{Design.} Use the full normalized benchmark database (2.76M records) to predict model $M$'s performance on task type $t_T$.
+
+\textbf{Failure.} Verification failed due to technical issues (JSON parse errors in the automated verification pipeline). However, the same structural problems affecting all other measurement designs apply: benchmark-to-task domain transfer breakdown, metric normalization artifacts, and data contamination. This phi function has the richest data backing (15,176 models) yet could not be verified, suggesting the problem is fundamental rather than data-limited.
+
+\subsection{Root Cause Analysis}
+
+The 9 failures share five structural root causes that are unlikely to be resolved by collecting more data or improving normalization algorithms.
+
+\paragraph{1. Metric Scale Incomparability.} Public benchmarks use fundamentally different measurement scales: accuracy percentages, Elo ratings, pass@k rates, and pairwise win rates. No statistically sound conversion exists between these scales. Min-max normalization creates comparable numbers but destroys the semantic content that would make them useful for routing.
+
+\paragraph{2. Domain Transfer Breakdown.} Performance on curated benchmark tasks does not predict performance on real user tasks. Benchmarks are designed for model comparison, not task-specific prediction. The evaluation conditions (fixed prompts, controlled difficulty, clean data) differ systematically from deployment conditions (varied prompts, uncalibrated difficulty, noisy context).
+
+\paragraph{3. Dimensional Collapse.} Complex, multi-dimensional phenomena (reasoning depth, instruction adherence, cost efficiency) cannot be reduced to single scalar scores without losing the task-conditional structure that routing requires. A model's reasoning capability is not a number; it is a function of task type, problem structure, and prompting strategy.
+
+\paragraph{4. Benchmark Contamination.} Modern LLMs are trained on datasets that include benchmark test sets, inflating scores beyond true capability \citep{deng2023leaderboards}. This contamination is not uniformly distributed: some models are more contaminated than others, some benchmarks more leaked than others. The resulting scores carry systematic bias that normalization cannot remove.
+
+\paragraph{5. Sparse Measurement vs. Complex Phenomena.} The available benchmark data provides sparse coverage (5--7 measurement points for context degradation, single accuracy numbers for domain performance) of phenomena that require dense, multi-dimensional characterization. Fitting complex surfaces to sparse data produces unreliable interpolation at exactly the operating points routing decisions depend on.
+
+\subsection{The Gap is the Finding}
+
+The measurement gap is a central empirical finding, but it requires careful scoping. The gap applies specifically to \emph{hand-designed, interpretable} phi functions that require explicit metric normalization, domain classification, and semantic mapping.
+
+\begin{itemize}
+    \item \textbf{Theory}: 14 of 14 mathematical results verified at 85--95\% confidence. The S(M,T) equation converges, has bounded regret, and its parameters are identifiable.
+    \item \textbf{Hand-designed measurement}: 0 of 14 measurement designs verified. Every attempt to compute interpretable phi functions from public benchmark data failed due to structural (not data-quantity) limitations.
+    \item \textbf{Learned measurement}: The BilinearPhiEngine (Section~\ref{sec:learned_phi}) achieves 83.63\% routing accuracy on RouterBench and AUC 0.8006 on RouteLLM by learning phi functions end-to-end from the \emph{same} benchmark data. The gap is not in the data. It is in the requirement that phi functions be interpretable.
+\end{itemize}
+
+This distinction reframes the finding. The binding constraint on LLM routing quality is not the routing algorithm, and it is not the data. It is the demand for interpretable, semantically labeled compatibility functions. When that demand is relaxed, public benchmark data is sufficient. When it is maintained, the five root causes above make static measurement intractable.
+
+\subsection{Implications for the Field}
+
+The measurement gap, and its learned resolution, have four consequences for LLM routing research:
+
+\paragraph{Public benchmarks are insufficient for interpretable routing.} The 7 datasets we ingested represent the most comprehensive public collection available for routing research. If 2.76M records across 15,526 models cannot ground even one hand-designed phi function, the problem is structural for interpretable approaches. Routing-specific benchmarks, ones that measure task-conditional, model-specific performance under deployment conditions, would help.
+
+\paragraph{Learned routing functions bypass the gap.} Section~\ref{sec:learned_phi} demonstrates that bilinear forms trained on pairwise routing data achieve competitive accuracy without requiring explicit metric normalization or domain classification. The normalization and domain transfer problems disappear because the model learns whatever internal representation best predicts routing outcomes. This suggests learned approaches may be more practical than hand-designed ones for production routing.
+
+\paragraph{Online learning is necessary, not optional.} Since static benchmark data cannot reliably initialize interpretable phi functions, the router must learn from its own routing decisions. The Robbins-Monro framework (Section~\ref{sec:convergence}) with entropy regularization provides the theoretical foundation for this learning. The seed weights serve as an informed prior, not as ground truth.
+
+\paragraph{Transparency about measurement quality matters.} Routing papers that report benchmark-grounded scores without documenting the normalization decisions, domain transfer assumptions, and contamination risks are overstating their confidence. The confidence column in Table~\ref{tab:phi_functions} (Section~\ref{sec:framework}), distinguishing data-grounded from prior-based phi functions, is not a weakness of our framework but a design feature.

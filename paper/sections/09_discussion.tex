@@ -1,0 +1,40 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{The Interpretability-Performance Tradeoff}
+
+The most striking finding of this work is a tradeoff, not an impossibility. All 14 theoretical results (convergence, regret bounds, identifiability, orthogonality, adversarial robustness) verified at 85--95\% confidence. Zero of 14 hand-designed measurement designs survived stress-testing. But the BilinearPhiEngine, using 16 learned bilinear forms on the same benchmark data, achieves 83.63\% routing accuracy on RouterBench and AUC 0.8006 on RouteLLM.
+
+The gap separates \emph{interpretable} from \emph{learned} routing. Hand-designed phi functions require explicit metric normalization, domain classification, and semantic mapping. Each of these steps introduces fragile assumptions that benchmark data cannot support. Learned bilinear forms sidestep all three by training end-to-end. The cost is that the 16 learned heads carry no semantic labels. We cannot say ``head 3 captures reasoning depth'' or ``head 7 measures instruction adherence.''
+
+The V3 scaling ablation (Section~\ref{sec:v3_ablation}) strengthens this finding. A 4.63$\times$ parameter increase with 2.2$\times$ more unique prompts and three architectural additions (task conditioning, cross-attention, metadata) uniformly degraded performance. The bottleneck is not model capacity but label quality: preference-based scores from heterogeneous datasets encode different semantics than benchmark accuracy, and naive data scaling amplifies this inconsistency rather than averaging it out.
+
+This tradeoff has practical implications. For production routing where operators need to audit, debug, and explain routing decisions, the hand-designed phi functions with literature-informed seed weights and online learning remain the appropriate interface. For empirical validation that the weighted-phi architecture \emph{can} achieve competitive accuracy, the bilinear engine provides the evidence. The two serve complementary roles.
+
+\subsection{Limitations}
+
+\paragraph{Seed Weight Subjectivity.} The literature prior scores $p_i$ (Section~\ref{sec:empirical}) were assigned by a single researcher surveying three papers. Different reviewers might assign different scores, shifting the seed weight vector. The Robbins-Monro learning procedure corrects for initialization bias over time (Proposition~\ref{prop:prior}), but early routing decisions are sensitive to the prior.
+
+\paragraph{Small Endpoint Set.} The v0.1 router covers 13 endpoints. Production routing systems may handle hundreds. The $O(\sqrt{KN\log N})$ regret bound scales with $K$ (phi dimensions, not endpoint count), but the gate evaluation cost scales linearly with the endpoint set size.
+
+\paragraph{No A/B Testing.} We have not compared S(M,T) routing decisions against human expert routing or competing algorithms on live traffic. The smoke tests (Table~\ref{tab:smoke_tests}) verify correctness of the pipeline, not optimality of the routing policy.
+
+\paragraph{Single-Turn Focus.} The current framework scores each task independently. Multi-turn conversations, where context accumulates and the optimal endpoint may change mid-conversation, are not addressed.
+
+\paragraph{Static Phi Definitions.} The 16 phi functions are defined at design time. New capability dimensions (e.g., multimodal reasoning, tool-use orchestration) would require adding new phi functions and re-deriving seed weights.
+
+\subsection{Broader Impact}
+
+LLM routing affects cost and quality for anyone using language models. A good router reduces cost by directing simple tasks to cheap models while preserving quality on hard tasks. A bad router wastes money on overqualified models or produces poor results by underestimating task difficulty. The measurement gap finding has a specific implication: routing systems that claim benchmark-grounded accuracy should be scrutinized carefully. The normalization decisions, domain transfer assumptions, and contamination risks documented in Section~\ref{sec:measurement} apply to all benchmark-based routing approaches, not just ours.
+
+\subsection{Future Directions}
+
+\paragraph{Routing-Specific Benchmarks.} The field needs benchmarks designed for routing evaluation, not repurposed from model comparison. These would measure task-conditional, model-specific performance under deployment conditions, with controlled contamination and standardized metrics.
+
+\paragraph{Multi-Turn Routing.} Extending S(M,T) to multi-turn conversations requires a state variable tracking accumulated context, cost, and user satisfaction across turns. The scoring equation becomes $S(M, T, s_t)$ where $s_t$ is the conversation state at turn $t$.
+
+\paragraph{Federated Weight Learning.} Multiple router deployments could share learned weights (after differential privacy protection) to accelerate convergence. The Robbins-Monro framework supports aggregated gradient estimates from distributed sources.
+
+\paragraph{Bridging Interpretability and Performance.} The BilinearPhiEngine (Section~\ref{sec:learned_phi}) demonstrates that learned phi functions achieve competitive routing accuracy. The open question is whether the learned bilinear heads can be \emph{interpreted} post-hoc, perhaps through probing classifiers or attention-style analysis, to recover semantic labels. If so, the interpretability-performance tradeoff could be narrowed. The diversity regularization already encourages the heads to capture different aspects of model-task interaction; understanding \emph{what} each head captures would connect the learned and hand-designed approaches.
+
+\paragraph{Data Curation Over Model Scaling.} The V3 ablation (Section~\ref{sec:v3_ablation}) suggests that future routing improvements should prioritize training data curation over architectural scaling. Specifically: consistent scoring semantics across sources, rigorous model identity resolution, and filtering for label quality before increasing training set size. This echoes findings in the inverse scaling literature \citep{mckenzie2023inverse}, where more capacity on noisy signals degrades performance.

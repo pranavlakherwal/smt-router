@@ -1,0 +1,95 @@
+\section{Empirical Grounding}
+\label{sec:empirical}
+
+We describe the data infrastructure supporting the S(M,T) framework: the ingestion pipeline, normalized database, and seed weight computation. While Section~\ref{sec:measurement} establishes that public benchmarks cannot reliably ground individual phi functions, the aggregate data still informs the seed weight vector $\wvec_0$ and provides the initial endpoint rankings used during the cold-start period.
+
+\subsection{Data Ingestion Pipeline}
+
+The pipeline processes 7 public datasets through four stages:
+
+\begin{enumerate}
+    \item \textbf{Download.} Fetch raw data from Hugging Face Hub, GitHub, and public APIs. Datasets range from 966 records (AlpacaEval) to 1.9M records (Open LLM Leaderboard).
+    \item \textbf{Normalize.} Parse heterogeneous formats (CSV, JSON, Parquet) into a unified schema: \texttt{(model\_id, benchmark, metric, score, timestamp)}. Apply min-max normalization within each benchmark to produce $[0,1]$-bounded scores.
+    \item \textbf{Map to Phi.} Route normalized records to the phi functions they inform, following a rule table that maps (dataset, metric) pairs to phi function IDs. For example, MMLU accuracy records map to $\phi_4$ (performance predictor) and $\phi_2$ (domain classifier), while pairwise comparison data maps to $\phi_8$ (cascade position).
+    \item \textbf{Seed Weights.} Compute the initial weight vector $\wvec_0$ using Equation~\ref{eq:seed_weights}, combining literature priors with data quality multipliers.
+\end{enumerate}
+
+The pipeline is idempotent: re-running it on the same raw data produces identical outputs. Total processing time is under 5 minutes on a single machine.
+
+\subsection{Normalized Database Statistics}
+
+The normalized SQLite database contains 2,764,077 records across 15,526 unique model identifiers. Table~\ref{tab:phi_coverage} shows the data coverage per phi function.
+
+\begin{table}[h]
+\centering
+\caption{Data coverage per phi function category.}
+\label{tab:phi_coverage}
+\small
+\begin{tabular}{lcrrr}
+\toprule
+\textbf{Category} & \textbf{Count} & \textbf{Records} & \textbf{Models} & \textbf{$\sum w_i$} \\
+\midrule
+Data-grounded & 8 & 2,764,077 & 15,526 & 0.847 \\
+Computed & 3 & 5,600 & 350 & 0.095 \\
+Prior-based & 3 & 0 & 0 & 0.024 \\
+Runtime/Derived & 2 & 0 & 0 & 0.024 \\
+\midrule
+\textbf{Total} & 16 & 2,764,077 & 15,526 & 1.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The seed weight allocation reflects data quality: data-grounded phi functions receive 84.7\% of total weight, while prior-based and runtime functions share the remaining 15.3\%. This is a deliberate design choice, not a bug. The weight learner (Section~\ref{sec:convergence}) will adjust these weights as online feedback accumulates, potentially upweighting prior-based functions if they prove informative in practice.
+
+\subsection{Seed Weight Computation}
+
+The seed weights derive from two independent signals (Equation~\ref{eq:seed_weights}):
+
+\paragraph{Literature Priors.} We surveyed three routing papers (FrugalGPT \citep{chen2023frugalgpt}, RouteLLM \citep{ong2024routellm}, and RouterBench \citep{hu2024routerbench}) and assigned importance scores on a 0.5--5.0 scale. Performance prediction ($\phi_4$, score 5.0) and historical success ($\phi_6$, score 4.0) consistently rank highest across all three papers. Cost efficiency ($\phi_{14}$, score 2.5) and instruction adherence ($\phi_{16}$, score 2.0) receive moderate ratings.
+
+\paragraph{Data Quality Multipliers.} Each phi function receives a quality multiplier based on its data coverage:
+\begin{itemize}
+    \item High ($q=1.0$): $>$1,000 records and $>$50 models
+    \item Medium ($q=0.5$): Moderate coverage
+    \item Low ($q=0.25$): Limited coverage
+    \item None ($q=0.1$): No direct data, prior-based only
+\end{itemize}
+
+The product $p_i \cdot q_i$, after simplex normalization, produces the seed weights reported in Table~\ref{tab:phi_functions}. The top-4 weights ($\phi_4 = 0.176$, $\phi_6 = 0.141$, $\phi_8 = 0.124$, $\phi_3 = \phi_{13} = 0.106$) together account for 65\% of total weight.
+
+\subsection{Router Implementation}
+
+The v0.1 router implements the full S(M,T) pipeline across 13 heterogeneous endpoints:
+
+\begin{itemize}
+    \item 7 LLM endpoints (Claude Opus 4, Claude Sonnet 4, GPT-4o, DeepSeek R1, DeepSeek V3, Qwen3 Coder, Gemini 2.5 Pro)
+    \item 3 Agent endpoints (auto-search, mathematical verification, first-principles thinking)
+    \item 1 Script endpoint (session capture)
+    \item 2 MCP tool endpoints (Notion, Google Workspace)
+\end{itemize}
+
+This heterogeneous endpoint set distinguishes our implementation from prior routing work, which focuses exclusively on LLM-to-LLM routing. The gate layer handles type-specific constraints (agents have no context window limit, scripts have fixed capabilities, MCP tools have specific supported operations), while the phi functions provide unified scoring across all endpoint types.
+
+\subsection{Smoke Test Results}
+
+We verify correctness through four routing scenarios (Table~\ref{tab:smoke_tests}).
+
+\begin{table}[h]
+\centering
+\caption{Smoke test results demonstrating correct routing behavior.}
+\label{tab:smoke_tests}
+\small
+\begin{tabular}{p{4cm}lp{4cm}}
+\toprule
+\textbf{Query} & \textbf{Selected} & \textbf{Verification} \\
+\midrule
+``Write a Python sort function'' & DeepSeek V3 & Cheapest coding-capable model \\
+``Solve $x^2 + 3x - 4 = 0$'' (thinking required) & DeepSeek R1 & 8/13 endpoints filtered for lacking thinking support \\
+``Explain quantum entanglement'' & Claude Sonnet 4 & Top general-knowledge model \\
+List endpoints & 13 registered & 7 LLM + 3 agent + 1 script + 2 MCP \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These tests verify gate filtering (thinking requirement eliminates 8 endpoints), phi function evaluation (coding task favors code-optimized models), and cost sensitivity (DeepSeek V3 selected over more expensive alternatives for a straightforward coding task).
+

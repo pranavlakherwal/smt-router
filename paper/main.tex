@@ -1,0 +1,145 @@
+\documentclass[11pt,a4paper]{article}
+
+% === Typography ===
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}           % Times Roman for text and math
+\usepackage[scaled=0.92]{helvet} % Helvetica for sans-serif
+\usepackage{courier}             % Courier for monospace
+\usepackage{microtype}           % Improved kerning and line breaks
+
+% === Layout ===
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\setstretch{1.08}                % Slightly more than single spacing
+\usepackage{parskip}             % Paragraph spacing instead of indent
+\setlength{\parskip}{0.5\baselineskip}
+\setlength{\parindent}{0pt}
+
+% === Mathematics ===
+\usepackage{amsmath,amssymb,amsthm}
+
+% === Tables and Figures ===
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{caption}
+\usepackage{subcaption}
+\captionsetup{
+  font={small},
+  labelfont={bf},
+  labelsep=period,
+  skip=6pt
+}
+
+% === Algorithms ===
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+% === Colors and Links ===
+\usepackage{xcolor}
+\definecolor{linkblue}{RGB}{0,51,153}
+\definecolor{citegreen}{RGB}{0,102,51}
+\usepackage[
+  colorlinks=true,
+  linkcolor=linkblue,
+  citecolor=citegreen,
+  urlcolor=linkblue,
+  bookmarks=true,
+  bookmarksnumbered=true,
+  pdfstartview=FitH,
+  pdftitle={S(M,T): A Unified Scoring Framework for LLM Routing with Provable Convergence and the Measurement Gap},
+  pdfauthor={Pranav Lakherwal}
+]{hyperref}
+
+% === Bibliography ===
+\usepackage{natbib}
+\bibliographystyle{plainnat}
+
+% === Headers and Footers ===
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{S(M,T): Unified LLM Routing}}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyfoot[C]{\small\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+
+% === Section Formatting ===
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{\thesubsubsection}{1em}{}
+\titlespacing*{\section}{0pt}{1.5\baselineskip}{0.75\baselineskip}
+\titlespacing*{\subsection}{0pt}{1\baselineskip}{0.5\baselineskip}
+\titlespacing*{\subsubsection}{0pt}{0.75\baselineskip}{0.25\baselineskip}
+
+% === Theorem Environments ===
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+% === Custom Commands ===
+\newcommand{\smt}{S(M,T)}
+\newcommand{\phii}{\phi_i}
+\newcommand{\betavec}{\boldsymbol{\beta}}
+\newcommand{\wvec}{\mathbf{w}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+
+% =====================================================================
+\begin{document}
+
+% === Title Block ===
+\begin{center}
+{\LARGE\bfseries S(M,T): A Unified Scoring Framework for LLM Routing\\[4pt]
+with Provable Convergence and the Measurement Gap\par}
+
+\vspace{14pt}
+
+{\large Pranav Lakherwal}\\[4pt]
+{\normalsize\texttt{pranav@pranavlakherwal.com}}
+
+\vspace{10pt}
+
+{\normalsize March 2026}
+\end{center}
+
+\vspace{10pt}
+
+% === Abstract ===
+\begin{abstract}
+\noindent
+We present S(M,T), a unified scoring framework for routing queries to optimal language model endpoints. The framework combines multiplicative gating, weighted compatibility functions, and Boltzmann cost penalties into a single equation: $\smt = \left[\prod_j g_j(M,T)\right] \cdot \left[\sum_i w_i \cdot \phii(M,T)\right] \cdot e^{-\betavec(T) \cdot \mathbf{H}}$. We prove convergence under Hajek conditions with logarithmic cooling, establish $O(\sqrt{KT\log T})$ regret bounds via contextual bandits reduction, and demonstrate weight identifiability when the phi matrix has full column rank. Grounding the framework against 2.76 million normalized benchmark records across 15,526 models from 7 public datasets, we discover a \textit{measurement gap}: 9 of 9 attempts to compute hand-designed phi functions from public benchmarks fail due to metric incomparability, domain transfer breakdown, and dimensional collapse. We then show the gap is specific to interpretable phi functions. Replacing the 16 hand-designed phis with 16 learned bilinear forms trained on 740,803 pairwise routing samples from 5 benchmark sources, we achieve 83.63\% accuracy on RouterBench (across 11 models) and AUC 0.8006 on RouteLLM (retaining 94.35\% of always-strong quality at 50\% cost). A leave-one-out generalization analysis reveals that RouterBench is the critical training source: removing it collapses cross-source transfer, while removing MT-Bench or RewardBench has no measurable effect. A scaling ablation (BilinearPhiEngine V3, 14.6M parameters, 4.63$\times$ V1) trained on an expanded dataset of 1.98 million samples with progressive architectural additions (task conditioning, cross-attention, metadata features) underperforms V1 on every metric, confirming that data quality dominates model capacity for learned routing. The measurement gap thus separates interpretable from learned routing, not theory from practice. Our implementation routes across heterogeneous endpoints (LLMs, agents, scripts, tool-use systems) with literature-informed seed weights for the interpretable interface and bilinear heads for empirical validation.
+\end{abstract}
+
+\vspace{6pt}
+\hrule
+\vspace{12pt}
+
+% === Body ===
+\input{sections/01_intro}
+\input{sections/02_background}
+\input{sections/03_framework}
+\input{sections/04_convergence}
+\input{sections/05_adversarial}
+\input{sections/06_measurement_gap}
+\input{sections/07_empirical}
+\input{sections/07b_learned_phi}
+\input{sections/07c_v3_ablation}
+\input{sections/08_related_work}
+\input{sections/09_discussion}
+\input{sections/10_conclusion}
+
+% === Bibliography ===
+\bibliography{bibliography}
+
+\end{document}

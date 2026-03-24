@@ -1,0 +1,138 @@
+\section{The S(M,T) Framework}
+\label{sec:framework}
+
+We define a unified scoring function that maps any (model, task) pair to a real-valued compatibility score. The framework generalizes beyond LLM-to-LLM routing: $M$ represents any capability endpoint (language model, autonomous agent, script, or tool-use system), and $T$ represents a structured task description.
+
+\subsection{Definitions}
+
+\begin{definition}[Endpoint]
+An endpoint $M \in \mathcal{M}$ is a callable capability with associated metadata: context window $c_M$, cost vector $\mathbf{h}_M \in \R^d_+$, capability flags $\mathbf{f}_M \in \{0,1\}^k$, and type $\tau_M \in \{\text{LLM}, \text{Agent}, \text{Script}, \text{Tool}\}$.
+\end{definition}
+
+\begin{definition}[Task]
+A task $T \in \mathcal{T}$ is a user request with classification $t_T \in \{$general, coding, math, reasoning, knowledge, instruction\_following$\}$, estimated complexity $\kappa_T \in [0,1]$, context length $\ell_T \in \mathbb{N}$, and constraint flags $\mathbf{r}_T \in \{0,1\}^k$.
+\end{definition}
+
+\subsection{The Scoring Equation}
+
+\begin{definition}[S(M,T) Score]
+For an endpoint $M$ and task $T$, the compatibility score is:
+\begin{equation}
+\label{eq:smt}
+\smt = \underbrace{\left[\prod_{j=1}^{J} g_j(M,T)\right]}_{\text{Gate layer}} \cdot \underbrace{\left[\sum_{i=1}^{K} w_i \cdot \phii(M,T)\right]}_{\text{Weighted compatibility}} \cdot \underbrace{e^{-\betavec(T) \cdot \mathbf{H}(M)}}_{\text{Cost penalty}}
+\end{equation}
+where $J=5$ binary gates, $K=16$ phi compatibility functions, and $d$-dimensional cost vector.
+\end{definition}
+
+The three multiplicative components serve distinct roles:
+
+\paragraph{Gate Layer (Product-of-Experts).} Each gate $g_j: \mathcal{M} \times \mathcal{T} \to \{0, 1\}$ enforces a hard constraint. If any gate returns 0, the entire score is zeroed out. This implements a Product-of-Experts (PoE) architecture \citep{hinton1999poe} that eliminates the equal-scoring vulnerability of purely additive approaches, where a model catastrophically failing one requirement could still score well by excelling at others.
+
+The five gates are:
+\begin{enumerate}
+    \item \textbf{Context window}: $g_1 = \mathbf{1}[c_M \geq \ell_T]$
+    \item \textbf{Format support}: $g_2 = \mathbf{1}[\text{structured output supported if required}]$
+    \item \textbf{Availability}: $g_3 = \mathbf{1}[M \text{ is currently reachable}]$
+    \item \textbf{Budget}: $g_4 = \mathbf{1}[\text{estimated cost} \leq b_T]$
+    \item \textbf{Thinking support}: $g_5 = \mathbf{1}[\text{CoT supported if required}]$
+\end{enumerate}
+
+\paragraph{Weighted Compatibility Functions.} The phi functions $\phii: \mathcal{M} \times \mathcal{T} \to [0,1]$ capture different dimensions of model-task compatibility. The weight vector $\wvec = (w_1, \ldots, w_K)$ lies on the probability simplex $\Delta^{K-1}$, so $\sum_i w_i = 1$ and $w_i \geq 0$. This normalization ensures the weighted sum produces a $[0,1]$-bounded compatibility score.
+
+\paragraph{Boltzmann Cost Penalty.} The exponential term $e^{-\betavec(T) \cdot \mathbf{H}(M)}$ penalizes expensive endpoints with a task-conditional temperature. Unlike a fixed temperature, the vector $\betavec(T) \in \R^d_+$ allows different task types to tolerate different cost levels: a safety-critical medical query should accept higher costs than a simple formatting task.
+
+\subsection{The 16 Phi Functions}
+
+Table~\ref{tab:phi_functions} defines all 16 compatibility functions. They decompose into four categories based on data availability and computation type:
+
+\begin{table}[h]
+\centering
+\caption{Phi function definitions with seed weights and data coverage.}
+\label{tab:phi_functions}
+\small
+\begin{tabular}{llccrr}
+\toprule
+\textbf{ID} & \textbf{Name} & \textbf{Type} & \textbf{$w_i$ (seed)} & \textbf{Records} & \textbf{Models} \\
+\midrule
+$\phi_1$ & constraint\_filter & Computed & 0.0706 & 4,200 & 350 \\
+$\phi_2$ & domain\_classifier & Data & 0.0353 & 2,042,817 & 14,926 \\
+$\phi_3$ & complexity\_estimator & Data & 0.1058 & 2,042,817 & 14,926 \\
+$\phi_4$ & performance\_predictor & Data & 0.1764 & 2,759,877 & 15,176 \\
+$\phi_5$ & context\_fitness & Prior & 0.0081 & 0 & 0 \\
+$\phi_6$ & historical\_success & Data & 0.1411 & 2,307,010 & 14,928 \\
+$\phi_7$ & uncertainty\_score & Derived & 0.0163 & 0 & 0 \\
+$\phi_8$ & cascade\_position & Data & 0.1235 & 2,311,210 & 15,278 \\
+$\phi_9$ & load\_availability & Runtime & 0.0081 & 0 & 0 \\
+$\phi_{10}$ & cross\_node\_capability & Prior & 0.0081 & 0 & 0 \\
+$\phi_{11}$ & calibration\_quality & Prior & 0.0081 & 0 & 0 \\
+$\phi_{12}$ & output\_structure & Prior & 0.0163 & 0 & 0 \\
+$\phi_{13}$ & reasoning\_depth & Data & 0.1058 & 2,003,949 & 12,434 \\
+$\phi_{14}$ & cost\_efficiency\_ratio & Data & 0.0882 & 719,702 & 576 \\
+$\phi_{15}$ & context\_window\_util & Data & 0.0176 & 1,400 & 350 \\
+$\phi_{16}$ & instruction\_adherence & Data & 0.0706 & 113,853 & 5,795 \\
+\midrule
+\multicolumn{4}{l}{\textbf{Total}} & \textbf{2,764,077} & \textbf{15,526} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Data-grounded} ($\phi_2, \phi_3, \phi_4, \phi_6, \phi_8, \phi_{13}, \phi_{14}, \phi_{16}$): Query 2.76M normalized benchmark records to compute model-specific scores. These carry the highest weight in the seed configuration ($\sum w_i = 0.85$ for data-grounded phis).
+
+\textbf{Computed} ($\phi_1, \phi_{12}, \phi_{15}$): Deterministic functions of endpoint metadata and task properties (e.g., context window ratio, cost tiers).
+
+\textbf{Prior-based} ($\phi_5, \phi_{10}, \phi_{11}$): Return literature-informed default values due to absent public data. These receive low seed weights ($w_i = 0.0081$) reflecting low confidence.
+
+\textbf{Runtime/Derived} ($\phi_7, \phi_9$): Computed at inference time from system state (availability, data coverage).
+
+\subsection{Seed Weight Derivation}
+
+The initial weight vector $\wvec_0$ is not arbitrary. We derive it from two signals:
+
+\begin{equation}
+\label{eq:seed_weights}
+w_i^{(0)} = \frac{p_i \cdot q_i}{\sum_{k=1}^K p_k \cdot q_k}
+\end{equation}
+
+where $p_i$ is the literature prior (importance weight from FrugalGPT, RouteLLM, and RouterBench) on a 0.5--5.0 scale, and $q_i$ is a data quality multiplier:
+\[
+q_i = \begin{cases}
+1.0 & \text{if data quality = high (>1000 records, >50 models)} \\
+0.5 & \text{if data quality = medium} \\
+0.25 & \text{if data quality = low} \\
+0.1 & \text{if data quality = none}
+\end{cases}
+\]
+
+This places the most weight on phi functions that are both important in the literature \emph{and} well-supported by data. The resulting top-4 seed weights are: $\phi_4$ (performance, $w=0.176$), $\phi_6$ (history, $w=0.141$), $\phi_8$ (cascade, $w=0.124$), and $\phi_3$/$\phi_{13}$ (complexity/reasoning, $w=0.106$ each).
+
+\subsection{Entropy-Regularized Selection}
+
+To prevent premature convergence to a single endpoint (mode collapse), we add an entropy bonus to the routing policy:
+
+\begin{equation}
+\label{eq:entropy}
+\smt_{\text{reg}} = \smt + \lambda(n) \cdot H(\pi)
+\end{equation}
+
+where $H(\pi) = -\sum_M \pi(M) \log \pi(M)$ is the Shannon entropy of the selection distribution, and $\lambda(n)$ decays as:
+
+\begin{equation}
+\lambda(n) = \max\left(\lambda_{\min}, \lambda_0 \cdot \gamma^n\right)
+\end{equation}
+
+with $\lambda_0 = 0.5$, $\gamma = 0.995$, and $\lambda_{\min} = 0.01$. This schedule, inspired by Soft Actor-Critic \citep{haarnoja2018sac}, maintains exploration early (high $\lambda$) and converges to greedy selection as confidence grows (low $\lambda$).
+
+\subsection{Phi Function Orthogonality}
+
+A natural concern is whether 16 phi functions are redundant. We verify orthogonality through six formal proofs (Section~\ref{sec:convergence}), showing that each phi captures a distinct signal:
+
+\begin{itemize}
+    \item $\phi_{11}$ (calibration) $\perp$ $\phi_7$ (uncertainty): Model-internal confidence vs. router-external data sufficiency.
+    \item $\phi_{12}$ (structure) $\perp$ $\phi_1$ (constraint): Continuous reliability gradient vs. binary capability check.
+    \item $\phi_{13}$ (reasoning) $\perp$ $\phi_3$ (complexity): Multi-step depth vs. surface-level difficulty.
+    \item $\phi_{14}$ (cost efficiency) $\perp$ $\beta \cdot H$: Task-conditional quality-per-dollar vs. global cost penalty.
+    \item $\phi_{15}$ (context util) $\perp$ $\phi_1$: Performance degradation curve vs. binary fit.
+    \item $\phi_{16}$ (instruction) $\perp$ $\phi_5$ (context fitness): Behavioral compliance vs. content relevance.
+\end{itemize}
+
+This ensures the 16 dimensions are not collapsible to a smaller set without information loss.

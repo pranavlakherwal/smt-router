@@ -1,0 +1,32 @@
+\section{Background}
+\label{sec:background}
+
+\subsection{LLM Routing}
+
+The proliferation of language models with different cost-quality tradeoffs has created a routing problem: given a user query, which model should handle it? Early work framed this as binary classification (strong model vs. weak model), while recent approaches treat it as a multi-armed bandit or learned scoring problem.
+
+\textbf{FrugalGPT} \citep{chen2023frugalgpt} introduced cascading: try a cheap model first, escalate to an expensive model only if confidence is low. This reduces cost by 50--90\% with minimal quality loss on standard benchmarks. However, the cascade structure is rigid: it assumes a fixed ordering of models by cost, and the escalation threshold must be tuned per task type.
+
+\textbf{RouteLLM} \citep{ong2024routellm} trained a classifier to predict whether GPT-4 or a smaller model would better handle a given query. The approach achieves strong results on the specific model pair it was trained for but does not generalize to arbitrary endpoint sets or non-LLM endpoints.
+
+\textbf{RouterBench} \citep{hu2024routerbench} provided a benchmark for evaluating routing algorithms, standardizing the comparison across 11 methods. Their analysis revealed that no single routing method dominates across all task types, motivating multi-dimensional scoring approaches.
+
+\subsection{Scoring Functions for Model Selection}
+
+Existing routing scores are typically additive: $S = \sum_i w_i f_i$ where $f_i$ are features and $w_i$ are weights. This structure has a known vulnerability: a model that catastrophically fails one requirement can still achieve a high total score by excelling at others. The Product-of-Experts framework \citep{hinton2002poe} addresses this through multiplicative combination, where any single expert can veto the prediction.
+
+\subsection{Stochastic Approximation}
+
+The Robbins-Monro algorithm \citep{robbins1951stochastic} provides a framework for online parameter estimation under noisy observations. Given a target function $f(\theta) = 0$, the update $\theta_{n+1} = \theta_n + \alpha_n \cdot (Y_n - f(\theta_n))$ converges to the root under standard conditions (bounded noise, decaying step sizes). This is the theoretical foundation for the weight learning procedure in Section~\ref{sec:convergence}.
+
+\subsection{Simulated Annealing}
+
+\citet{hajek1988cooling} established necessary and sufficient conditions for simulated annealing to converge to the global optimum. The key result: a logarithmic cooling schedule $\beta(t) = c \log(1+t)$ with $c$ exceeding the maximum energy barrier suffices for convergence. We apply this to the temperature schedule in the S(M,T) scoring equation.
+
+\subsection{Contextual Bandits}
+
+In contextual bandits \citep{agrawal2013thompson}, an agent observes a context (task features), selects an action (endpoint), and receives a reward (quality signal). Thompson Sampling with linear payoffs achieves $O(\sqrt{dT\log T})$ regret where $d$ is the context dimension and $T$ is the horizon. This provides the regret bound for our routing framework (Section~\ref{sec:convergence}).
+
+\subsection{Entropy Regularization}
+
+Soft Actor-Critic \citep{haarnoja2018sac} introduced entropy-regularized policy optimization in reinforcement learning, adding $\lambda H(\pi)$ to the objective to prevent premature convergence. The temperature $\lambda$ can be fixed or learned. We adapt this to routing, using a decaying $\lambda(n)$ schedule that transitions from exploration to exploitation.
