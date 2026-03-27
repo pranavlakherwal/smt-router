@@ -23,11 +23,54 @@ We also acknowledge visible gaps. The 13-endpoint pool is small. We have no live
 
 \paragraph{Single-turn only.} The framework scores each task independently. Multi-turn conversations, where the optimal endpoint may change mid-conversation, are not addressed.
 
+\subsection{Endpoint Typology: What the Equation Cannot Express}
+\label{sec:typology}
+
+The current equation scores \textit{what} an endpoint can do. It does not capture \textit{how} an endpoint computes. This distinction does not matter when routing among LLMs, which account for 98\% of endpoint pools in practice. It matters when routing across structurally different computation patterns: a single LLM call, an agent that plans and re-plans across turns, a deterministic script, or an LLM augmented with tool calls.
+
+Consider four endpoints handling the same task:
+
+\begin{itemize}
+    \item A direct Claude call: single inference, \$0.015, stochastic output.
+    \item A thinking agent: calls Claude multiple times, maintains a plan, \$0.06.
+    \item A refresh pipeline script: deterministic, zero marginal cost, fixed capabilities.
+    \item Claude with web search: LLM + tool composition, \$0.02.
+\end{itemize}
+
+These are structurally different computation patterns, not different points on the same capability surface. The current 16 phi functions and 5 gates encode topic affinity and hard constraints. Six properties of endpoints remain unrepresented:
+
+\paragraph{Autonomy.} A script executes a fixed procedure. An LLM produces a single inference. An agent plans, executes, observes, and re-plans. The degree of self-direction across steps varies from zero (scripts) to high (agents). No current phi function or gate captures this.
+
+\paragraph{Compositionality.} A tool call is atomic. An LLM with tool use is a two-step composition. An agent calling an LLM that calls a tool is recursive composition. The equation treats all three as single $(M, T)$ pairs with no representation of internal structure.
+
+\paragraph{State.} Scripts are stateless. LLM calls are stateless per request (the context window is input, not persistent state). Agents maintain state across turns: session context, memory, and evolving plans. The multi-turn limitation (Section~\ref{sec:discussion}) is a special case of this broader gap.
+
+\paragraph{Determinism.} Scripts produce identical output given identical input. LLMs are stochastic (temperature-dependent). Agents combine stochastic components with deterministic orchestration. Expected output variance given the same input is not modeled.
+
+\paragraph{Scope of action.} A tool performs one specific operation. An LLM produces one type of output (text, with structured variants). An agent can perform many operations across many turns. The capability profile captures topic affinity, not operational scope.
+
+\paragraph{Recursion depth.} A direct LLM call has depth 1. An agent that calls an LLM which invokes a tool has depth 3. Cost, latency, and failure probability compound with depth. The current cost penalty models price per token, not recursive cost accumulation.
+
+\medskip
+
+These six properties suggest possible extensions to $\smt$. Four candidate parameters:
+
+\begin{itemize}
+    \item Autonomy $\alpha \in [0,1]$: scripts $= 0$, LLM calls $\approx 0.1$, LLM + tool $\approx 0.3$, agents $\approx 0.7$--$0.9$.
+    \item Composition depth $d \in \mathbb{N}$: number of nested endpoint invocations.
+    \item State function $\sigma(t)$: whether the endpoint carries information between time steps.
+    \item Determinism $\delta \in [0,1]$: expected output variance given identical input.
+\end{itemize}
+
+These could enter the framework as new phi functions (expanding the weighted sum) or as new gate functions (binary requirements on computation pattern). A task that requires deterministic output would gate on $\delta$. A task that benefits from autonomous re-planning would weight $\alpha$ in the compatibility layer.
+
+We do not implement these extensions here. The current framework handles LLM-to-LLM routing well, and that remains the dominant use case. But the equation as written cannot formalize what makes an agent an agent, or why a script is the right choice for a deterministic pipeline. Closing this gap is where the next phase of S(M,T) research needs to go. Recent work on agent orchestration~\citep{moma2025routing, daao2025} confirms that the field is converging on this problem from multiple directions.
+
 \subsection{Future Directions}
 
 The equation can get better. This is step one, not the final form. The future does not belong to any single routing framework. It belongs to the decision each architect makes: which framework fits their problem, their endpoints, their constraints. Our goal is to make S(M,T) one strong option in that decision space.
 
-\paragraph{Expanding the scoring functions.} 16 learned phi dimensions is a starting point. We are actively testing additional functions across broader task distributions. The modular design makes this straightforward: learned phi functions are drop-in replacements within the gates-compatibility-cost structure.
+\paragraph{Expanding the scoring functions.} 16 learned phi dimensions is a starting point. The endpoint typology (Section~\ref{sec:typology}) identifies six structural properties that are candidates for new phi functions or gates. We are actively testing additional functions across broader task distributions. The modular design makes this straightforward: learned phi functions are drop-in replacements within the gates-compatibility-cost structure.
 
 \paragraph{Shadow routing (coming soon).} The biggest barrier to better routing is the absence of routing-specific training data. We are developing an open-source shadow router: it monitors queries and context, autonomously calculates which endpoint it would assign at the backend, and logs the result without interfering with the existing workflow. Think of it as a clinical trial for AI usage: observe, measure, compare, then decide. With enough data, this generates real routing signal that benchmarks cannot provide. Details: \texttt{b@bnotb.com}.
 

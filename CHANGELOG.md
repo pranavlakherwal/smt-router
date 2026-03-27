@@ -2,6 +2,24 @@
 
 All notable changes to S(M,T) will be documented in this file.
 
+## [v1.2] - 2026-03-27
+
+### Endpoint Typology
+
+Identifies six structural properties of endpoints that the current S(M,T) equation cannot express. These properties distinguish computation patterns (scripts, LLM calls, tool-augmented LLMs, agents) that the equation currently treats as points in the same capability space.
+
+**What changed:**
+
+- **New Section 8.4: "Endpoint Typology: What the Equation Cannot Express."** Names the core problem: the equation scores *what* an endpoint can do, not *how* it computes. Documents six missing dimensions: autonomy, compositionality, state management, determinism, scope of action, and recursion depth.
+- **Four candidate parameters proposed:** autonomy α ∈ [0,1], composition depth d ∈ ℕ, state function σ(t), determinism δ ∈ [0,1]. Each could enter as new phi functions or new gates.
+- **Future Directions updated** to reference the typology as a source of new scoring functions and gates.
+- Cites existing agent orchestration work (MoMA, DAAO) already in bibliography.
+
+**What did not change:**
+
+- All experimental results, the equation, training data, and implementation.
+- Existing sections are unchanged except for a one-sentence forward reference in Future Directions.
+
 ## [v1.1] - 2026-03-27
 
 ### Revised Edition
