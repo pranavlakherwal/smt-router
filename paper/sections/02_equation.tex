@@ -1,0 +1,82 @@
+\section{The Scoring Equation}
+\label{sec:equation}
+
+An endpoint $M$ is any callable capability: an LLM, an agent, a script, or a tool-use system. A task $T$ is a user request with an estimated type, complexity, and context length.
+
+\subsection{Design Reasoning}
+
+Why these three terms? And why multiply them?
+
+Three things matter when choosing an endpoint for a task, and they are not interchangeable.
+
+\paragraph{Some requirements are non-negotiable.} If a model's context window cannot fit the input, nothing else matters. If it does not support structured output and the task requires JSON, it is out. These are constraints, not preferences. We represent them as binary gates. A gate returns 1 (passes) or 0 (fails). The product of all gates is 1 only if every constraint is met.
+
+\paragraph{``Good'' is not one dimension.} A model that excels at code generation may be poor at creative writing. A model trained for English may struggle with Hindi. Compatibility must be multi-dimensional, weighted by what the task actually requires. The 16 $\phi$ functions each capture a different aspect of fit. The weights are learned from routing feedback using Robbins-Monro updates (Appendix~\ref{sec:app_convergence}), starting from literature-derived seeds.
+
+\paragraph{Cost tolerance belongs to the task, not the model.} The same model at the same price might be worth it for a medical analysis and wildly overpriced for reformatting a paragraph. The Boltzmann cost penalty $e^{-\betavec(T) \cdot \mathbf{H}(M)}$ adjusts the score based on how cost-sensitive the task is. This is structurally identical to the logit kernel in discrete choice theory~\citep{mcfadden1974conditional}; \citet{train2009discrete} provides a comprehensive treatment.
+
+\paragraph{Multiplication makes these layers hierarchical.} You cannot compensate for a failed gate with excellent compatibility. For routing, some dimensions are dealbreakers, not tradeoffs. This is a Product-of-Experts architecture~\citep{hinton2002poe}: any single gate can veto. If every endpoint fails at least one gate, all scores are zero and the router signals that no endpoint qualifies, triggering fallback (relax the lowest-priority gate and re-score).
+
+\subsection{Formal Definition}
+
+\begin{equation}
+\label{eq:smt}
+\smt = \underbrace{\left[\prod_{j=1}^{J} g_j(M,T)\right]}_{\text{Gate layer}} \cdot \underbrace{\left[\sum_{i=1}^{K} w_i \cdot \phii(M,T)\right]}_{\text{Weighted compatibility}} \cdot \underbrace{e^{-\betavec(T) \cdot \mathbf{H}(M)}}_{\text{Cost penalty}}
+\end{equation}
+
+The three terms multiply. If any gate returns 0, the entire score is 0, regardless of compatibility or cost.
+
+\subsection{Gates}
+
+Each gate $g_j: \mathcal{M} \times \mathcal{T} \to \{0, 1\}$ checks a hard constraint. We use five:
+
+\begin{enumerate}
+    \item \textbf{Context window}: Can $M$ fit the input? $g_1 = \mathbf{1}[c_M \geq \ell_T]$
+    \item \textbf{Format support}: Does $M$ support structured output, if required?
+    \item \textbf{Availability}: Is $M$ currently reachable?
+    \item \textbf{Budget}: Is the estimated cost within the task's budget?
+    \item \textbf{Thinking support}: Does $M$ support chain-of-thought, if required?
+\end{enumerate}
+
+The gate layer encodes type-specific constraints. Scripts have no context window limit but fixed capabilities. Agents have no token cost but variable latency. MCP tools support specific operations but not arbitrary prompts. This heterogeneity is handled through gate design, not separate scoring logic per endpoint type.
+
+\subsection{Compatibility Functions}
+
+The $K=16$ phi functions $\phii: \mathcal{M} \times \mathcal{T} \to [0,1]$ measure different aspects of how well $M$ fits $T$. The weight vector $\wvec$ lies on the probability simplex ($\sum_i w_i = 1$, $w_i \geq 0$).
+
+\begin{table}[h]
+\centering
+\caption{The 16 phi functions with seed weights and data backing.}
+\label{tab:phi_functions}
+\small
+\begin{tabular}{llccrr}
+\toprule
+\textbf{ID} & \textbf{Name} & \textbf{Type} & \textbf{$w_i$} & \textbf{Records} & \textbf{Models} \\
+\midrule
+$\phi_1$ & constraint\_filter & Computed & 0.071 & 4{,}200 & 350 \\
+$\phi_2$ & domain\_classifier & Data & 0.035 & 2{,}042{,}817 & 14{,}926 \\
+$\phi_3$ & complexity\_estimator & Data & 0.106 & 2{,}042{,}817 & 14{,}926 \\
+$\phi_4$ & performance\_predictor & Data & 0.176 & 2{,}759{,}877 & 15{,}176 \\
+$\phi_5$ & context\_fitness & Prior & 0.008 & 0 & 0 \\
+$\phi_6$ & historical\_success & Data & 0.141 & 2{,}307{,}010 & 14{,}928 \\
+$\phi_7$ & uncertainty\_score & Derived & 0.016 & 0 & 0 \\
+$\phi_8$ & cascade\_position & Data & 0.124 & 2{,}311{,}210 & 15{,}278 \\
+$\phi_9$ & load\_availability & Runtime & 0.008 & 0 & 0 \\
+$\phi_{10}$ & cross\_node\_capability & Prior & 0.008 & 0 & 0 \\
+$\phi_{11}$ & calibration\_quality & Prior & 0.008 & 0 & 0 \\
+$\phi_{12}$ & output\_structure & Prior & 0.016 & 0 & 0 \\
+$\phi_{13}$ & reasoning\_depth & Data & 0.106 & 2{,}003{,}949 & 12{,}434 \\
+$\phi_{14}$ & cost\_efficiency\_ratio & Data & 0.088 & 719{,}702 & 576 \\
+$\phi_{15}$ & context\_window\_util & Data & 0.018 & 1{,}400 & 350 \\
+$\phi_{16}$ & instruction\_adherence & Data & 0.071 & 113{,}853 & 5{,}795 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The functions fall into four categories. \textbf{Data-grounded} ($\phi_2$ through $\phi_4$, $\phi_6$, $\phi_8$, $\phi_{13}$ through $\phi_{16}$): computed from 2.76M normalized benchmark records, carrying 85\% of total seed weight. \textbf{Computed} ($\phi_1$, $\phi_{12}$, $\phi_{15}$): deterministic functions of metadata. \textbf{Prior-based} ($\phi_5$, $\phi_{10}$, $\phi_{11}$): literature-informed defaults, low weight. \textbf{Runtime} ($\phi_7$, $\phi_9$): measured at inference time.
+
+\subsection{Cost Penalty and Weight Learning}
+
+The term $e^{-\betavec(T) \cdot \mathbf{H}(M)}$ penalizes expensive endpoints with a task-conditional temperature. A safety-critical medical query gets a low $\beta$ (accept high cost); a formatting task gets a high $\beta$ (prefer cheap).
+
+Initial weights are derived from routing literature~\citep{chen2023frugalgpt, ong2024routellm, hu2024routerbench} and data quality scores (Equation~\ref{eq:seed_weights} in Appendix~\ref{sec:app_convergence}). A decaying entropy bonus inspired by Soft Actor-Critic~\citep{haarnoja2018sac} prevents mode collapse during early routing. The online weight learner adjusts weights from routing feedback using Robbins-Monro stochastic approximation~\citep{robbins1951stochastic}. Full details on seed weight derivation, entropy scheduling, and update rules are in Appendix~\ref{sec:app_convergence}.

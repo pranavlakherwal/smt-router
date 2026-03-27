@@ -1,0 +1,30 @@
+\section{Scaling Does Not Help}
+\label{sec:scaling}
+
+A natural question: does scaling the BilinearPhiEngine improve routing? We built V3 to test this. The answer is no.
+
+\paragraph{V3 design.} V3 scales three dimensions simultaneously: $K=24$ heads with $D=768$ (14.6M parameters, 4.63$\times$ V1), training on 1.98M rows from 10 additional preference datasets, and three architectural additions (task conditioning, cross-attention, metadata features) via 5-stage progressive training on an A100.
+
+\paragraph{Results.} V3 underperforms V1 on every benchmark:
+
+\begin{table}[h]
+\centering
+\caption{V1 vs.\ V3 on external benchmarks. V1 wins everywhere.}
+\label{tab:v3_external}
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{RouterBench} & \textbf{RouteLLM AUC} & \textbf{Q@50\%} \\
+\midrule
+\textbf{V1} (3.15M) & \textbf{83.63} & \textbf{0.8006} & \textbf{0.9435} \\
+V3-Stage2 (14.6M) & 82.94 & 0.7972 & 0.8020 \\
+V3-Stage5 (14.6M) & 81.47 & 0.7973 & 0.8022 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The quality-at-50\%-strong metric shows the starkest gap: V3 retains only 80\% of best-model quality at 50\% cost, versus V1's 94\%. On internal evaluation, V3's correlation with ground truth collapses from $r = 0.53$ (V1) to $r \approx -0.04$ (V3).
+
+\paragraph{Why scaling failed.} Four factors: (1)~\textbf{Label distribution shift}: the V2 training data merged preference-based scores with benchmark accuracy scores, encoding different quality semantics. (2)~\textbf{Sparse model coverage}: 53 of 101 model IDs were unrecognized, causing 49\% of rows to be skipped. (3)~\textbf{Progressive training instability}: Stage 5 performs worse than Stage 2, confirming architectural additions overfit to training artifacts. (4)~\textbf{Overparameterization}: V3's parameter-to-sample ratio (7.4:1) exceeds V1's (4.3:1), absorbing noise rather than learning better representations.
+
+\paragraph{Measurement gap confirmation.} This result confirms the measurement gap thesis from a different angle. If the bottleneck were model capacity, V3 should outperform V1. It does not. The bottleneck is in the training signal: inconsistent scoring semantics across data sources, label noise from aggregating heterogeneous evaluation methodologies, and the absence of routing-specific supervision. The path to better routing runs through cleaner data, not bigger models.

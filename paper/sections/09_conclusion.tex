@@ -1,0 +1,14 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+S(M,T) assembles well-understood components (Product-of-Experts gates, additive utility, Boltzmann cost penalty, Robbins-Monro learning) into a scoring framework for routing across heterogeneous AI endpoints. The techniques are standard. The finding is not.
+
+Fourteen attempts to compute hand-designed scoring functions from 2.76M benchmark records all failed. The reasons are structural: metrics use incomparable scales, benchmark performance does not transfer to deployment, and complex properties collapse when reduced to single numbers. This is the measurement gap.
+
+Replacing hand-designed functions with 16 learned bilinear forms achieves 83.63\% accuracy on RouterBench and 94.35\% of best-model quality at half the cost on RouteLLM. The model generalizes across both benchmarks without benchmark-specific tuning. A 4.6$\times$ scaling experiment confirmed that data quality, not model capacity, is the binding constraint.
+
+The measurement gap separates interpretable from learned routing, but it also points forward. If benchmarks cannot ground hand-designed routing scores, the field needs benchmarks designed for routing, not repurposed from model comparison. Close the measurement gap, and you do not just get better routing. You get a foundation for evaluating AI systems under the conditions where they actually operate.
+
+Code: \texttt{github.com/pranavlakherwal/smt-router}
+
+\paragraph{AI Disclosure.} AI tools from Anthropic assisted with writing and code development. All research direction, experimental design, and intellectual contributions are the author's own.

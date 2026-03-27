@@ -1,0 +1,42 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{What the Results Say}
+
+The learned scoring functions work but sacrifice interpretability. The 16 bilinear heads carry no semantic labels. Whether this tradeoff is acceptable depends on the use case. For production systems that need auditability, hand-designed functions with online weight learning remain appropriate. What matters for the field is that the cross-benchmark generalization (Section~\ref{sec:learned_phi}) suggests general-purpose routing is achievable. We use this router in production. This is incomplete research, and we want to be explicit about what is next.
+
+\subsection{Self-Critique and Honest Assessment}
+
+We ran systematic falsification against every novelty claim using automated verification (DeepSeek Prover V2, DeepSeek R1). The results shaped this paper's posture.
+
+S(M,T) maps to a constrained conditional logit model~\citep{mcfadden1974conditional}. The bilinear forms are factorization machines~\citep{rendle2010factorization}. The gates inherit from hierarchical Mixture-of-Experts gating~\citep{jordan1994hierarchical}. The convergence proofs use standard Robbins-Monro and Thompson Sampling results. We do not claim these techniques are novel.
+
+We also acknowledge visible gaps. The 13-endpoint pool is small. We have no live A/B test results. The learned phi functions are uninterpretable. Single-turn scoring misses conversational dynamics. These are real limitations, not footnotes.
+
+\subsection{Limitations}
+
+\paragraph{Seed weight subjectivity.} Literature prior scores were assigned by a single researcher. Different reviewers might shift the seed vector. The online learner corrects for this over time, but early routing decisions depend on the prior.
+
+\paragraph{Small endpoint set.} The router covers 13 endpoints. Production systems may need hundreds. Gate evaluation cost scales linearly with endpoint count.
+
+\paragraph{No live A/B testing.} We have not compared S(M,T) against human routing or competing algorithms on live traffic.
+
+\paragraph{Single-turn only.} The framework scores each task independently. Multi-turn conversations, where the optimal endpoint may change mid-conversation, are not addressed.
+
+\subsection{Future Directions}
+
+The equation can get better. This is step one, not the final form. The future does not belong to any single routing framework. It belongs to the decision each architect makes: which framework fits their problem, their endpoints, their constraints. Our goal is to make S(M,T) one strong option in that decision space.
+
+\paragraph{Expanding the scoring functions.} 16 learned phi dimensions is a starting point. We are actively testing additional functions across broader task distributions. The modular design makes this straightforward: learned phi functions are drop-in replacements within the gates-compatibility-cost structure.
+
+\paragraph{Shadow routing (coming soon).} The biggest barrier to better routing is the absence of routing-specific training data. We are developing an open-source shadow router: it monitors queries and context, autonomously calculates which endpoint it would assign at the backend, and logs the result without interfering with the existing workflow. Think of it as a clinical trial for AI usage: observe, measure, compare, then decide. With enough data, this generates real routing signal that benchmarks cannot provide. Details: \texttt{b@bnotb.com}.
+
+\paragraph{Richer cost modeling.} Price per token is insufficient. Production cost includes latency, rate limits, reliability, and multi-step overhead.
+
+\paragraph{Multi-turn routing.} Extending S(M,T) to conversations requires a state variable: $S(M, T, s_t)$ where $s_t$ tracks accumulated context, cost, and quality across turns.
+
+\paragraph{Data curation over model scaling.} The V3 result (Section~\ref{sec:scaling}) confirms the bottleneck is data quality, not model capacity. Future improvements should focus on consistent scoring semantics across training sources.
+
+\subsection{Robustness}
+
+The multiplicative structure provides three built-in defenses. Entropy regularization prevents mode collapse. Task-conditional temperature stabilizes rankings under noisy phi values. Decaying step sizes in the weight learner, combined with simplex projection, limit the impact of adversarial feedback. The gate layer is not affected by weight learning: manipulated weights cannot override hard constraints. Full adversarial analysis is in Appendix~\ref{sec:app_adversarial}.

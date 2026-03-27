@@ -1,0 +1,129 @@
+\section{Learned Compatibility Functions}
+\label{sec:learned_phi}
+
+Hand-designed phi functions fail because they require explicit metric normalization and domain mapping (Section~\ref{sec:measurement}). But routing does not need interpretable phi functions. It needs phi functions that predict routing outcomes. This section replaces the 16 semantic phis with 16 learned bilinear forms trained end-to-end.
+
+\subsection{Architecture}
+
+Each learned phi is a bilinear interaction between a prompt embedding and a model embedding:
+
+\begin{equation}
+\label{eq:bilinear_phi}
+\hat{\phi}_i(M, T) = \sigma\!\left(\mathbf{e}_T^\top \mathbf{W}_i \, \mathbf{e}_M + b_i\right), \quad i = 1, \ldots, K
+\end{equation}
+
+where $\mathbf{e}_T \in \R^{768}$ is a frozen prompt embedding (all-mpnet-base-v2), $\mathbf{e}_M \in \R^{256}$ is a learned model embedding, $\mathbf{W}_i \in \R^{768 \times 256}$ is a learned bilinear matrix, and $\sigma$ is the sigmoid. The overall score is:
+
+\begin{equation}
+\label{eq:bilinear_score}
+\hat{S}(M, T) = \sum_{i=1}^{K} \alpha_i \cdot \hat{\phi}_i(M, T), \quad \alpha_i = \frac{e^{a_i}}{\sum_j e^{a_j}}
+\end{equation}
+
+This is a multi-head factorization machine~\citep{rendle2010factorization} with sigmoid outputs, building on the matrix factorization foundations established by \citet{koren2009matrix} (the same paradigm underlying RouteLLM's matrix factorization router). Multi-head attention~\citep{vaswani2017attention} provides the structural inspiration for multiple heads. Our contribution is applying this to routing and demonstrating that it resolves the measurement gap.
+
+With $K=16$ heads, the model has 3.15M trainable parameters: 16 bilinear matrices (3.15M), 48 model embeddings (12K), 16 head weights, and 16 biases. A diversity regularization term $\mathcal{L}_{\text{div}} = \frac{1}{K(K-1)} \sum_{i \neq j} |\cos(\text{vec}(\mathbf{W}_i), \text{vec}(\mathbf{W}_j))|$ prevents head collapse.
+
+\subsection{Training Data}
+
+Five public datasets, unified into 740,803 (prompt, model, score) triples:
+
+\begin{table}[h]
+\centering
+\caption{Training data sources for the BilinearPhiEngine.}
+\label{tab:training_data}
+\small
+\begin{tabular}{lrrl}
+\toprule
+\textbf{Source} & \textbf{Samples} & \textbf{Models} & \textbf{Score Type} \\
+\midrule
+RouterBench & 401,467 & 11 & Accuracy (0/1) \\
+RouteLLM & 218,202 & 2 & Win rate (0/1) \\
+Arena 55K & 111,712 & 45 & Elo-derived \\
+MT-Bench & 6,710 & 5 & Rating (1 to 10) \\
+RewardBench & 2,712 & 31 & Accuracy (0/1) \\
+\midrule
+\textbf{Total} & \textbf{740,803} & \textbf{48} & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A canonical registry maps 180 model name aliases to 48 canonical IDs. Scores are normalized to $[0,1]$ per source. Data is split 80/10/10. Training uses AdamW with differential learning rates ($10^{-4}$ for bilinear matrices, $10^{-3}$ for embeddings) and early stopping. Total wall time: under 70 minutes on Apple Silicon.
+
+\subsection{Implementation}
+
+The v0.1 router implements S(M,T) across 13 heterogeneous endpoints: 7 LLMs (Claude Opus 4, Claude Sonnet 4, GPT-4o, DeepSeek R1, DeepSeek V3, Qwen3 Coder, Gemini 2.5 Pro), 3 agents (search, math verification, first-principles), 1 script (session capture), and 2 MCP tool-use systems (Notion, Google Workspace). The gate layer handles type-specific constraints (agents have no context window limit, scripts have fixed capabilities, MCP tools support specific operations), and phi functions score all endpoint types through a common interface.
+
+\subsection{Results}
+
+\subsubsection{RouterBench}
+
+RouterBench~\citep{hu2024routerbench} tests multi-model selection across 11 models and 8 datasets using accuracy as the metric.
+
+\begin{table}[h]
+\centering
+\caption{RouterBench results. Our router approaches always-strong while using cheaper models.}
+\label{tab:routerbench_results}
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Method} & \textbf{0-shot} & \textbf{5-shot} & \textbf{Overall} \\
+\midrule
+Random & 55.50 & 64.34 & -- \\
+Always-strong & 84.35 & 86.66 & 85.51 \\
+\textbf{BilinearPhi (ours)} & \textbf{80.49} & \textbf{86.76} & \textbf{83.63} \\
+Oracle & 96.13 & 96.76 & 96.45 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+In the 5-shot setting, the router slightly beats always-strong (86.76\% vs.\ 86.66\%). This means it learns when cheaper models are genuinely better, not just cheaper. The gap to always-strong is 1.88 percentage points. The gap to oracle is 12.82 points, representing the upper bound on what any router could gain.
+
+\subsubsection{RouteLLM}
+
+RouteLLM~\citep{ong2024routellm} evaluates binary routing across MMLU, GSM8K, and MT-Bench.
+
+\begin{table}[h]
+\centering
+\caption{RouteLLM results. At 50\% strong-model cost, 94.35\% of quality is retained.}
+\label{tab:routellm_results}
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Threshold} & \textbf{Quality} & \textbf{Quality Ratio} \\
+\midrule
+Always weak & 0.7187 & 84.09\% \\
+50\% strong & 0.8065 & 94.35\% \\
+Always strong & 0.8547 & 100.00\% \\
+\midrule
+\textbf{AUC} & \multicolumn{2}{c}{\textbf{0.8006}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+In practice: \$10,000/month on AI becomes \$5,000 with 94\% quality. The quality drop concentrates on queries near the decision boundary where both models perform similarly. The model was not trained for RouteLLM's binary task specifically. AUC 0.8006 reflects general routing ability, not benchmark-specific optimization.
+
+\subsection{Cross-Benchmark Generalization}
+
+The BilinearPhiEngine was not trained for either benchmark specifically. It learned from five data sources simultaneously and generalized to both evaluation paradigms, which use different metrics (accuracy vs.\ quality retention), different model sets (11 models vs.\ 2), and different task distributions.
+
+\begin{table}[h]
+\centering
+\caption{Leave-one-out generalization. Diagonal (bold) = zero-shot transfer to the held-out source.}
+\label{tab:cross_source}
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Trained w/o} & \textbf{RBench} & \textbf{RLLM} & \textbf{Arena} & \textbf{MTB} & \textbf{RwdB} \\
+\midrule
+RouterBench & \textbf{0.651} & 0.073 & 0.197 & 0.174 & 0.169 \\
+RouteLLM & 0.425 & \textbf{0.319} & 0.457 & 0.468 & 0.385 \\
+Arena 55K & 0.583 & 0.321 & \textbf{0.460} & 0.470 & 0.386 \\
+MT-Bench & 0.682 & 0.321 & 0.459 & \textbf{0.469} & 0.385 \\
+RewardBench & 0.679 & 0.320 & 0.459 & 0.468 & \textbf{0.385} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three findings. \textbf{RouterBench is the anchor}: removing it collapses cross-source generalization (row 1 drops to $r < 0.20$ on non-RouterBench sources). \textbf{RouteLLM resists transfer}: capped at $r \approx 0.32$ regardless of training composition, because its 2-model binary format is a qualitatively different problem. \textbf{Small sources are redundant}: removing MT-Bench or RewardBench has no measurable effect on generalization.
+
+This is early evidence that a general-purpose routing framework is achievable. The learned scoring functions appear to capture task-model compatibility at a level more general than any single benchmark measures. We do not claim this is proven. But the cross-benchmark results, combined with the leave-one-out stability, point in this direction.

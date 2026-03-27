@@ -1,0 +1,98 @@
+\section{Convergence Proofs and Formal Properties}
+\label{sec:app_convergence}
+
+This appendix contains the full convergence analysis, identifiability proofs, and supporting formal results referenced in the main text.
+
+\subsection{Weight Learning}
+
+After each routing decision $n$, the weight vector updates via Robbins-Monro stochastic approximation~\citep{robbins1951stochastic}:
+
+\begin{equation}
+\label{eq:rm_update}
+w_i^{(n+1)} = \Pi_{\Delta^{K-1}}\left[w_i^{(n)} + \alpha_n \cdot \phi_i(M_n, T_n) \cdot (r_n - \hat{r}_n)\right]
+\end{equation}
+
+where $\alpha_n = 1/(n+1)$, $\hat{r}_n = \sum_i w_i^{(n)} \phi_i(M_n, T_n)$ is the predicted score, $r_n$ is the observed quality, and $\Pi_{\Delta^{K-1}}$ projects onto the probability simplex~\citep{duchi2008simplex}.
+
+\subsection{Seed Weights}
+
+The initial weight vector is not arbitrary:
+
+\begin{equation}
+\label{eq:seed_weights}
+w_i^{(0)} = \frac{p_i \cdot q_i}{\sum_{k=1}^K p_k \cdot q_k}
+\end{equation}
+
+where $p_i$ is a literature-derived importance score (surveying FrugalGPT~\citep{chen2023frugalgpt}, RouteLLM~\citep{ong2024routellm}, RouterBench~\citep{hu2024routerbench}) and $q_i$ is a data quality multiplier (1.0 for high coverage, 0.1 for no data). This puts the most weight on functions that are both important in the literature and well-supported by data. The online weight learner adjusts these from routing feedback.
+
+\subsection{Entropy Regularization}
+
+To prevent the router from collapsing to always picking one endpoint, we add a decaying entropy bonus inspired by Soft Actor-Critic~\citep{haarnoja2018sac}:
+
+\begin{equation}
+\label{eq:entropy}
+\smt_{\text{reg}} = \smt + \lambda(n) \cdot H(\pi), \quad \lambda(n) = \max\left(\lambda_{\min}, \lambda_0 \cdot \gamma^n\right)
+\end{equation}
+
+with $\lambda_0 = 0.5$, $\gamma = 0.995$, $\lambda_{\min} = 0.01$. This keeps exploration high early on and converges to near-greedy selection as the router gains confidence.
+
+\subsection{Global Convergence}
+
+\begin{theorem}[Global Convergence]
+\label{thm:hajek}
+With logarithmic cooling $\beta(t) = c \cdot \log(1 + t)$, bounded phi functions $\phi_i \in [0,1]$, and step sizes satisfying the Robbins-Monro conditions ($\sum \alpha_n = \infty$, $\sum \alpha_n^2 < \infty$), the weight vector converges almost surely to $\wvec^* = \arg\max_{\wvec \in \Delta^{K-1}} \E[\text{quality}(\arg\max_M \smt)]$. This follows from the Hajek sufficient conditions for simulated annealing~\citep{hajek1988cooling} combined with the ODE method for stochastic approximation~\citep{kushner2003stochastic}.
+\end{theorem}
+
+\subsection{Regret Bound}
+
+Routing maps to contextual bandits: the router observes context (task $T$), picks an arm (endpoint $M$), and gets a reward (quality $r$). The phi values form the feature vector.
+
+\begin{theorem}[Sublinear Regret]
+\label{thm:regret}
+With $K=16$ phi functions and $L$ endpoints, Thompson Sampling with linear payoffs~\citep{agrawal2013thompson} gives cumulative regret:
+\begin{equation}
+\label{eq:regret}
+R(N) = O\left(\sqrt{KN\log N}\right)
+\end{equation}
+For $K=16$ and $L=13$, reaching 95\% optimal routing requires roughly $N \approx 10{,}000$ decisions.
+\end{theorem}
+
+The $\sqrt{K}$ factor (not $L$) reflects the dimension of the weight space. The contextual structure provides an improvement of $\sqrt{K/L}$ over naive per-endpoint exploration.
+
+\subsection{Identifiability}
+
+\begin{theorem}[Weight Identifiability]
+\label{thm:weight_id}
+The weight vector $\wvec$ is uniquely recoverable from observed routing outcomes if the phi matrix $\Phi \in \R^{N \times K}$ (rows are phi evaluations on observed model-task pairs) has full column rank. With 15,526 models in the database and $K=16$, this condition is easily met.
+\end{theorem}
+
+\begin{theorem}[Temperature Identifiability]
+\label{thm:beta_id}
+Given sufficient task diversity (task feature matrix has full rank), the temperature parameters $\betavec(T)$ are jointly identifiable with the weights. Task-conditional temperature improves identifiability over a scalar $\beta$ because different task types provide independent constraining equations~\citep{rothenberg1971identification}.
+\end{theorem}
+
+\subsection{Gate Layer Correctness}
+
+\begin{proposition}[PoE Eliminates Equal-Scoring Vulnerability]
+\label{prop:poe}
+If endpoint $M_a$ fails any gate ($g_j(M_a, T) = 0$), then $S(M_a, T) = 0$ regardless of phi values. Under additive scoring, $M_a$ could still outscore a constraint-satisfying endpoint by excelling on other dimensions. The multiplicative gate structure makes this impossible.
+\end{proposition}
+
+\subsection{Informed Prior and Entropy}
+
+\begin{proposition}[Prior Acceleration]
+\label{prop:prior}
+Starting from the literature-informed seed weights $\wvec_0$ (Equation~\ref{eq:seed_weights}) reduces early regret by $\Omega(\|\wvec_U - \wvec^*\|^2 - \|\wvec_0 - \wvec^*\|^2)$ compared to uniform initialization $\wvec_U = (1/K, \ldots, 1/K)$, provided the prior is closer to optimal than uniform.
+\end{proposition}
+
+\begin{proposition}[Entropy Schedule]
+\label{prop:entropy}
+The decay $\lambda(n) = \max(0.01, 0.5 \cdot 0.995^n)$ ensures exploration dominates for the first ${\sim}100$ decisions ($\lambda > 0.3$) and converges to near-greedy selection ($\lambda \to 0.01$) without breaking the convergence guarantee of Theorem~\ref{thm:hajek}.
+\end{proposition}
+
+\subsection{Phi Function Independence}
+
+\begin{theorem}[Pairwise Orthogonality]
+\label{thm:orthogonality}
+The 16 phi functions capture non-redundant signals. We verify this for the six most confusable pairs by constructing task-model examples where their rankings diverge: calibration vs.\ uncertainty (model-internal vs.\ router-external), structure vs.\ constraint (continuous reliability vs.\ binary check), reasoning vs.\ complexity (multi-step depth vs.\ surface difficulty), cost efficiency vs.\ cost penalty (task-conditional vs.\ global), context utilization vs.\ context gate (degradation curve vs.\ binary fit), and instruction adherence vs.\ context fitness (behavioral compliance vs.\ content relevance). Full separating examples are available in the supplementary materials.
+\end{theorem}

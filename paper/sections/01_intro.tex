@@ -1,29 +1,66 @@
 \section{Introduction}
 \label{sec:intro}
 
-Language model routing, the problem of selecting the optimal model for a given task, has become a practical necessity. With dozens of models available at different price points, quality levels, and capability profiles, manual selection is intractable. Automated routing promises to reduce costs while maintaining quality by matching tasks to appropriate endpoints.
+A user sends a request: ``Solve this differential equation step by step and return the answer as \LaTeX.'' You have 13 endpoints: seven LLMs at different price points, three agents, two coding assistants, and a script library. Which one do you call?
 
-Existing approaches frame routing as either binary classification (strong vs. weak model) \citep{ong2024routellm}, cascading (try cheap first, escalate if needed) \citep{chen2023frugalgpt}, or learned scoring \citep{hu2024routerbench}. These methods share three limitations: they route only between LLMs, ignoring agents, scripts, and tool-use systems; they use additive scoring functions vulnerable to compensating failures; and they lack formal convergence guarantees.
+This is the routing problem. Get it right and you save money while matching quality. Get it wrong and you either pay for an expensive model that adds nothing, or you pick a cheap one that cannot handle the task.
 
-We present S(M,T), a unified scoring framework that addresses all three:
+\subsection{Why This Matters}
+
+The conversation about AI cost centers on which model to use: frontier versus open source, GPT-4 versus Claude versus Llama. That is the wrong frame. The real leverage is not in the model. It is in the orchestration.
+
+Organizations will spend billions of dollars on AI tokens annually. Most of that spend flows through routing decisions that are manual, heuristic, or nonexistent. Effective routing (sending each task to the right endpoint at the right cost) could redirect billions of dollars of compute. Not cut it. Use it better.
+
+As AI systems grow more heterogeneous (LLMs, agents, scripts, tool-use systems, workflows), routing becomes critical infrastructure. The difference between organizations that get the best outcome per dollar of compute and organizations that overpay for mediocre results is not which model they picked. It is whether they route intelligently.
+
+\subsection{The Hypothesis}
+
+We approach this with a specific hypothesis: every endpoint (LLM, API, script, agent, workflow) and every task (user prompt, system request, batch job) can be decomposed into measurable properties. If an endpoint's capabilities can be quantified and a task's requirements can be quantified, then the match between them can be scored. If it can be scored, it can be optimized.
+
+This is not obvious. The dominant assumption is that routing requires either human judgment, learned classifiers trained per model pair, or cascading heuristics. We propose that routing is a measurement problem: score every endpoint against every task through a single equation, then pick the highest score.
+
+\subsection{What Existing Routers Do}
+
+Existing routers have made real progress, but they share assumptions that limit them.
+
+FrugalGPT~\citep{chen2023frugalgpt} introduced cascading: try the cheap model, escalate if it is not confident. This cuts costs 50 to 90\% for simple workloads but assumes models are ordered from weak to strong, which breaks when a cheap coding model outperforms an expensive general model on Python tasks. RouteLLM~\citep{ong2024routellm} trains pairwise classifiers on Chatbot Arena data. Strong for binary routing. Extending pairwise classifiers to $N$ endpoints requires $O(N^2)$ classifiers. GraphRouter~\citep{feng2024graphrouter} uses GNN-learned embeddings over task-model graphs. \citet{dekoninck2024cascade} unified routing and cascading. RouterBench~\citep{hu2024routerbench} standardized evaluation across 11 methods.
+
+These systems share one assumption: they route between LLMs only. Most use additive or linear scoring (\citeauthor{dekoninck2024cascade}'s $\tau_i = \hat{q} - \lambda\hat{c}$, BEST-Route's cost-quality selection). The learned-representation methods (GraphRouter, ZeroRouter, EmbedLLM) use dot-product scoring, which avoids the additive trap but still lacks hard constraint enforcement: a model that cannot fit the input can still score high. None routes to non-LLM endpoints. Scripts have no context window. Agents have no token cost. MCP tools support specific operations but not arbitrary prompts. Routing across these types requires constraint enforcement that additive and embedding-based scores do not provide.
+
+\subsection{What S(M,T) Does}
+
+S(M,T) is a single equation that scores any endpoint against any task. Three terms, multiplied:
 
 \begin{equation*}
 \smt = \underbrace{\left[\prod_{j} g_j(M,T)\right]}_{\text{Gates}} \cdot \underbrace{\left[\sum_{i} w_i \cdot \phii(M,T)\right]}_{\text{Compatibility}} \cdot \underbrace{e^{-\betavec(T) \cdot \mathbf{H}(M)}}_{\text{Cost penalty}}
 \end{equation*}
 
-The equation combines three multiplicative components: a Product-of-Experts gate layer that enforces hard constraints (Section~\ref{sec:framework}), a weighted sum of 16 phi compatibility functions capturing different dimensions of model-task fit, and a Boltzmann cost penalty with task-conditional temperature. The multiplicative structure is not decorative: it provably eliminates the equal-scoring vulnerability of additive approaches (Proposition~\ref{prop:poe}).
+\textbf{Gates} check hard constraints: can this endpoint handle this task at all? Binary pass/fail. If any gate fails, the score is zero. \textbf{Compatibility} scores how well the endpoint fits the task across 16 dimensions. \textbf{Cost} penalizes expensive endpoints with a task-conditional temperature: a medical query tolerates high cost, a formatting task does not.
 
-\paragraph{Theoretical Contributions.}
-We prove convergence under Hajek conditions with logarithmic cooling (Theorem~\ref{thm:hajek}), establish $O(\sqrt{KN\log N})$ regret bounds through contextual bandits reduction (Theorem~\ref{thm:regret}), and demonstrate weight and temperature identifiability under standard rank conditions (Theorems~\ref{thm:weight_id},~\ref{thm:beta_id}). Six orthogonality proofs verify that the 16 phi functions capture non-redundant information (Theorem~\ref{thm:orthogonality}). All 14 results verify at 85--95\% confidence.
+The multiplication is the key design choice. These layers are hierarchical, not interchangeable. A failed gate cannot be compensated by high compatibility. Additive scoring allows this. Multiplicative scoring does not.
 
-\paragraph{The Measurement Gap.}
-A key empirical finding is negative. We ingested 2,764,077 normalized benchmark records across 15,526 models from 7 public datasets (Section~\ref{sec:empirical}). We then attempted 14 measurement designs to ground hand-designed phi functions in this data (Section~\ref{sec:measurement}). All 14 failed due to structural problems: metric scale incomparability, domain transfer breakdown, benchmark contamination, and dimensional collapse.
+The techniques are standard. The gate layer is a Product-of-Experts architecture~\citep{hinton2002poe} with structural parallels to hierarchical MoE gating~\citep{jacobs1991adaptive, jordan1994hierarchical}. The compatibility term is an additive utility function from MCDA~\citep{fishburn1967additive}. The cost penalty is a Boltzmann factor from discrete choice theory~\citep{mcfadden1974conditional, train2009discrete}. Online weight learning uses Robbins-Monro stochastic approximation~\citep{robbins1951stochastic}. We do not claim novelty for these components individually. The contribution is the assembled framework and what we found when we tried to implement it.
 
-\paragraph{Learned Phi Functions.}
-However, the measurement gap is specific to interpretable, hand-designed phi functions. We show that replacing the 16 hand-designed phis with 16 learned bilinear forms, trained end-to-end on 740,803 pairwise routing samples, bypasses the measurement gap entirely (Section~\ref{sec:learned_phi}). The BilinearPhiEngine achieves 83.63\% accuracy on RouterBench and AUC 0.8006 on RouteLLM, demonstrating that the weighted-phi architecture produces competitive routing when the learning problem is well-posed. A leave-one-out generalization analysis identifies which training sources matter (RouterBench is critical; MT-Bench and RewardBench are redundant) and which transfer problems remain hard (RouteLLM's binary format resists prediction from other sources). The tradeoff is interpretability: the 16 learned heads carry no semantic labels.
+\subsection{Why This Direction Matters}
 
-\paragraph{Implementation.}
-The v0.1 router implements S(M,T) across 13 heterogeneous endpoints: 7 LLMs, 3 autonomous agents, 1 script, and 2 MCP tool-use systems (Section~\ref{sec:empirical}). The hand-designed phi functions with literature-informed seed weights serve as the interpretable production interface, while the bilinear engine provides empirical validation. Robbins-Monro online learning adapts weights from routing feedback.
+If the hypothesis holds (endpoints and tasks are mathematically decomposable), then routing reduces to measurement. Measure the right properties, and the equation does the rest. Any new model, agent, or tool can be onboarded by measuring its properties and feeding them into the same scoring function. No retraining. No per-pair classifiers. One equation for the entire ecosystem.
 
-\paragraph{Paper Organization.}
-Section~\ref{sec:background} reviews background on routing, stochastic approximation, and contextual bandits. Section~\ref{sec:framework} defines the S(M,T) equation, gates, phi functions, and seed weights. Section~\ref{sec:convergence} presents convergence, regret, identifiability, and orthogonality results. Section~\ref{sec:adversarial} analyzes adversarial robustness. Section~\ref{sec:measurement} documents the measurement gap. Section~\ref{sec:empirical} describes the data pipeline and implementation. Section~\ref{sec:learned_phi} presents the learned BilinearPhiEngine with benchmark evaluation and generalization analysis. Section~\ref{sec:related} surveys related work. Section~\ref{sec:discussion} discusses limitations and future directions. Section~\ref{sec:conclusion} concludes.
+We tested this. We designed 16 compatibility functions by hand: reasoning depth, code ability, instruction following, cost efficiency, and twelve others. We tried to compute them from 2.76M public benchmark records. Fourteen designs, four research cycles. All fourteen failed.
+
+The reasons are structural, not fixable with more data: benchmarks use incomparable scales, performance does not transfer from evaluation to deployment, and complex properties lose their task-conditional structure when reduced to single numbers. We call this the \textit{measurement gap}.
+
+But the direction was sound. The equation structure (gates $\times$ compatibility $\times$ cost) was right. The problem was how we computed compatibility. When we replaced the hand-designed functions with 16 learned bilinear forms, the same public data that failed hand-designed measurement achieved 83.63\% accuracy on RouterBench and 94.35\% quality retention at 50\% cost on RouteLLM. The model generalizes across both benchmarks without benchmark-specific tuning.
+
+The measurement gap is the real bottleneck. Not compute. Not model size. Close it, and routing becomes a solved infrastructure problem.
+
+\subsection{Contributions}
+
+\begin{enumerate}
+    \item \textbf{S(M,T)}, a scoring framework that routes across heterogeneous endpoints (LLMs, agents, scripts, tool-use systems) through a single equation. The multiplicative gate structure enables type-specific constraint enforcement. No existing router handles this mix. The techniques are standard; the application to heterogeneous routing is new.
+
+    \item \textbf{The measurement gap}, a systematic documentation showing 0 of 14 hand-designed scoring functions can be reliably computed from public benchmarks, with five identified structural causes.
+
+    \item \textbf{Learned compatibility functions} that achieve cross-benchmark generalization, with evidence that data quality, not model capacity, is the binding constraint.
+
+    \item \textbf{The hypothesis} that routing is a measurement problem: if endpoints and tasks are mathematically decomposable, a single equation can score any endpoint against any task. The cross-benchmark results are early evidence that this decomposition is achievable.
+\end{enumerate}

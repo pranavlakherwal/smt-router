@@ -48,7 +48,7 @@
   bookmarks=true,
   bookmarksnumbered=true,
   pdfstartview=FitH,
-  pdftitle={S(M,T): A Unified Scoring Framework for LLM Routing with Provable Convergence and the Measurement Gap},
+  pdftitle={S(M,T): Scoring AI Endpoints and the Measurement Gap in LLM Routing},
   pdfauthor={Pranav Lakherwal}
 ]{hyperref}
 
@@ -60,7 +60,7 @@
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small\textit{S(M,T): Unified LLM Routing}}
+\fancyhead[L]{\small\textit{S(M,T): Scoring AI Endpoints}}
 \fancyhead[R]{\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancypagestyle{plain}{%
@@ -100,8 +100,8 @@
 
 % === Title Block ===
 \begin{center}
-{\LARGE\bfseries S(M,T): A Unified Scoring Framework for LLM Routing\\[4pt]
-with Provable Convergence and the Measurement Gap\par}
+{\LARGE\bfseries S(M,T): Scoring AI Endpoints\\[4pt]
+and the Measurement Gap in LLM Routing\par}
 
 \vspace{14pt}
 
@@ -110,7 +110,11 @@ with Provable Convergence and the Measurement Gap\par}
 
 \vspace{10pt}
 
-{\normalsize March 2026}
+{\normalsize March 2026}\\[4pt]
+{\small\textit{v1.1. Restructured for clarity and conciseness.\\
+Convergence proofs moved to appendix. Added design reasoning,\\
+self-critique, and Goodhart framing. See CHANGELOG.md for details.\\
+Previous version: \texttt{github.com/pranavlakherwal/smt-router/releases/tag/v1.0}}}
 \end{center}
 
 \vspace{10pt}
@@ -118,7 +122,15 @@ with Provable Convergence and the Measurement Gap\par}
 % === Abstract ===
 \begin{abstract}
 \noindent
-We present S(M,T), a unified scoring framework for routing queries to optimal language model endpoints. The framework combines multiplicative gating, weighted compatibility functions, and Boltzmann cost penalties into a single equation: $\smt = \left[\prod_j g_j(M,T)\right] \cdot \left[\sum_i w_i \cdot \phii(M,T)\right] \cdot e^{-\betavec(T) \cdot \mathbf{H}}$. We prove convergence under Hajek conditions with logarithmic cooling, establish $O(\sqrt{KT\log T})$ regret bounds via contextual bandits reduction, and demonstrate weight identifiability when the phi matrix has full column rank. Grounding the framework against 2.76 million normalized benchmark records across 15,526 models from 7 public datasets, we discover a \textit{measurement gap}: 9 of 9 attempts to compute hand-designed phi functions from public benchmarks fail due to metric incomparability, domain transfer breakdown, and dimensional collapse. We then show the gap is specific to interpretable phi functions. Replacing the 16 hand-designed phis with 16 learned bilinear forms trained on 740,803 pairwise routing samples from 5 benchmark sources, we achieve 83.63\% accuracy on RouterBench (across 11 models) and AUC 0.8006 on RouteLLM (retaining 94.35\% of always-strong quality at 50\% cost). A leave-one-out generalization analysis reveals that RouterBench is the critical training source: removing it collapses cross-source transfer, while removing MT-Bench or RewardBench has no measurable effect. A scaling ablation (BilinearPhiEngine V3, 14.6M parameters, 4.63$\times$ V1) trained on an expanded dataset of 1.98 million samples with progressive architectural additions (task conditioning, cross-attention, metadata features) underperforms V1 on every metric, confirming that data quality dominates model capacity for learned routing. The measurement gap thus separates interpretable from learned routing, not theory from practice. Our implementation routes across heterogeneous endpoints (LLMs, agents, scripts, tool-use systems) with literature-informed seed weights for the interpretable interface and bilinear heads for empirical validation.
+Routing AI queries to the right endpoint is becoming critical infrastructure as organizations spend billions on heterogeneous AI systems (LLMs, agents, scripts, tools). However, no existing framework scores these diverse endpoint types through a single equation, and no prior work documents why hand-designed scoring functions fail systematically.
+
+We propose S(M,T), a scoring framework that multiplies three terms: binary gates enforcing hard constraints, a weighted compatibility function, and a task-conditional cost penalty. Unlike existing routers, the gate layer encodes type-specific constraints (scripts have no context window, agents have no token cost), enabling a single equation to route across heterogeneous endpoint pools.
+
+We attempted to compute the compatibility functions from 2.76M public benchmark records. Fourteen designs across four research cycles all failed. The reasons are structural: metrics use incomparable scales, benchmark performance does not transfer to deployment, and complex properties collapse when reduced to single numbers. We call this the measurement gap.
+
+Replacing hand-designed functions with 16 learned bilinear forms (3.15M parameters, trained on 740K routing samples) achieves 83.63\% accuracy on RouterBench and AUC 0.8006 on RouteLLM, retaining 94.35\% of best-model quality at half the cost. The model generalizes across both benchmarks without benchmark-specific tuning. A 4.6$\times$ scaling experiment confirms that data quality, not model capacity, is the binding constraint.
+
+This enables a path toward general-purpose AI routing: one equation that scores any endpoint against any task, where the architect chooses the routing framework that fits their problem. Code: \texttt{github.com/pranavlakherwal/smt-router}.
 \end{abstract}
 
 \vspace{6pt}
@@ -127,19 +139,21 @@ We present S(M,T), a unified scoring framework for routing queries to optimal la
 
 % === Body ===
 \input{sections/01_intro}
-\input{sections/02_background}
-\input{sections/03_framework}
-\input{sections/04_convergence}
-\input{sections/05_adversarial}
-\input{sections/06_measurement_gap}
-\input{sections/07_empirical}
-\input{sections/07b_learned_phi}
-\input{sections/07c_v3_ablation}
-\input{sections/08_related_work}
-\input{sections/09_discussion}
-\input{sections/10_conclusion}
+\input{sections/02_equation}
+\input{sections/03_measurement_gap}
+\input{sections/04_learned_phi}
+\input{sections/05_scaling}
+\input{sections/06_theory}
+\input{sections/07_related_work}
+\input{sections/08_discussion}
+\input{sections/09_conclusion}
 
 % === Bibliography ===
 \bibliography{bibliography}
+
+% === Appendices ===
+\appendix
+\input{sections/appendix_convergence}
+\input{sections/appendix_adversarial}
 
 \end{document}

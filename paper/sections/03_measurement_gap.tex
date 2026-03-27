@@ -1,0 +1,62 @@
+\section{The Measurement Gap}
+\label{sec:measurement}
+
+With the equation defined, we set out to implement it. We had 2.76M benchmark records from seven public datasets spanning 15,526 models.
+
+\begin{table}[h]
+\centering
+\caption{Public datasets ingested for phi function grounding.}
+\label{tab:datasets}
+\small
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Dataset} & \textbf{Records} & \textbf{Models} & \textbf{Metric Type} \\
+\midrule
+Open LLM Leaderboard & 1,897,419 & 5,168 & Accuracy \\
+RouteLLM & 714,606 & 2 & Win rate \\
+RouterEval & 105,042 & 7,117 & Pairwise preference \\
+Epoch AI & 40,356 & 2,641 & Mixed \\
+OpenRouter & 4,200 & 350 & Pricing/context \\
+SWE-bench & 1,488 & 149 & Pass rate \\
+AlpacaEval & 966 & 102 & Win rate \\
+\midrule
+\textbf{Total} & \textbf{2,764,077} & \textbf{15,526} & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For each of the 16 phi functions, we wrote an algorithm to compute a $[0,1]$ score from these records. We tested 14 designs across four research cycles. Our verification process ran overnight: a mathematical verification engine (using DeepSeek Prover V2 and DeepSeek R1) stress-tested each design for structural flaws, adversarial inputs, and consistency with published results.
+
+All fourteen designs failed. Not ``performed poorly.'' Failed. Each one contained at least one structural flaw that made it unreliable for routing.
+
+\subsection{Walking Through Specific Failures}
+
+\paragraph{Cost efficiency ($\phi_{14}$).} The idea is simple: divide benchmark score by price per token. Higher is better. But benchmark score is in units of accuracy (or Elo, or pass rate) and price is in dollars per token. The ratio is dimensionally invalid. Worse, a 10-token formatting request and a 4,000-token analysis get the same benchmark score but wildly different costs. Task-length sensitivity causes prediction errors exceeding 100$\times$.
+
+\paragraph{Reasoning depth ($\phi_{13}$).} We tried to estimate reasoning complexity from prompt features: number of sub-questions, logical operators, domain keywords. Surface features correlate poorly with actual reasoning depth. And GSM8K performance (our best data source for reasoning) does not generalize to non-mathematical reasoning. A model that solves grade-school math is not necessarily good at legal analysis.
+
+\paragraph{Instruction adherence ($\phi_{16}$).} IFEval measures constraint satisfaction (did the model follow the format?). MT-Bench measures stylistic quality (was the response good?). These are different skills. Averaging them predicts neither. A model that scores high on IFEval by rigidly following templates may score low on MT-Bench for being robotic. We cannot add these signals without destroying what each one measures.
+
+\subsection{Root Causes}
+
+Every failure traces to five structural problems, each a variant of Goodhart's Law~\citep{goodhart1975monetary}: when a measure becomes a target, it ceases to be a good measure. Campbell~\citep{campbell1979assessing} documented the same pattern in social science indicators. Manheim and Garrabrant~\citep{manheim2019categorizing} taxonomize four variants; we observe three in our data.
+
+\begin{enumerate}
+\item \textbf{Metric incomparability (Regressional Goodhart).} Benchmarks use fundamentally different scales (accuracy, Elo, pass@k, win rate). Min-max normalization creates comparable numbers but destroys semantic content. The normalization itself introduces systematic bias.
+
+\item \textbf{Domain transfer breakdown (Extremal Goodhart).} Performance on curated benchmark tasks does not predict performance on real user tasks. Models optimized for benchmarks perform unpredictably on out-of-distribution routing tasks. Evaluation conditions differ systematically from deployment conditions.
+
+\item \textbf{Dimensional collapse.} Reducing complex phenomena (reasoning depth, instruction adherence, cost efficiency) to single scalars destroys the task-conditional structure that routing needs. A model's reasoning ability depends on the domain, the depth required, and the output format. One number cannot capture this.
+
+\item \textbf{Benchmark contamination (Adversarial Goodhart).} LLMs are trained on benchmark test sets, inflating scores non-uniformly~\citep{deng2023leaderboards}. Normalization cannot remove this systematic bias. Some models appear stronger than they are on specific tasks.
+
+\item \textbf{Sparse measurement.} Benchmarks provide 5 to 7 data points for phenomena that need dozens. Interpolation fails at exactly the operating points routing depends on.
+\end{enumerate}
+
+\subsection{The Pivot}
+
+The measurement gap applies specifically to hand-designed, interpretable phi functions that require explicit metric normalization and domain mapping. It does not mean S(M,T) is wrong.
+
+The gate structure works: binary pass/fail checks on context window, format support, availability, budget, and thinking capability are straightforward to compute and do not depend on benchmarks. The cost penalty works: pricing data is clean and available. The problem is specifically in the compatibility functions, where hand-designed measurement requires mapping benchmark metrics onto routing-relevant scores.
+
+The equation was right. The implementation method was wrong. So we kept the equation and changed the method.
