@@ -2,6 +2,26 @@
 
 All notable changes to S(M,T) will be documented in this file.
 
+## [v1.3] - 2026-06-02
+
+### Shadow Routing Production Update + Rust SGLang Gateway Port (skeleton)
+
+Two months of observations from a shadow-routing deployment of S(M,T) on a personal-twin daemon, plus a skeleton Rust port of the policy targeting SGLang's Model Gateway. Also adds a worked example of S(M,T) routing across the Grok model family.
+
+**What changed:**
+
+- **New `docs/GROK_FAMILY_ROUTING.md`:** worked example of S(M,T) applied to a publicly-priced model family (the Grok lineup), with six query types walked through cell-by-cell and an aggregate cost-vs-quality table. Demonstrates that the equation handles intra-family routing across model + `reasoning_effort` jointly — a dimension the existing open routers do not exploit. Weighted result: ~65% cost saved at -3.5pp quality on a representative mix.
+- **New branch `grok-spacexai-Rust-routingpolicy`** carries a draft Rust crate (`rust-sgl-policy-smt/`) that mirrors the eventual upstream layout for `sgl-model-gateway/src/policies/s_mt/`. Implements the `RoutingPolicy` trait with `select_single`, `select_pair`, and (most importantly) `on_request_complete` — the outcome hook that no built-in SGLang policy currently uses. Robbins-Monro weight updates live there. The crate compiles in isolation against stubbed SGLang types; trait shapes will be pinned against current `sgl-project/sglang` HEAD before any upstream PR.
+- **Production deployment observations (Q1-Q2 2026, 345 routing decisions logged).** Under online Robbins-Monro updates from outcome signals, two features dominate the converged weights: `phi_1` (relevance) ≈ 0.474 and `phi_8` (composition headroom) ≈ 0.526. The other fourteen `phi` features zeroed out. Consistent with the v1.1 measurement-gap framing: routing is feature-bound, not capacity-bound.
+- **Gate-pruning rate observed at ~44%** on the production sample (77-decision JSONL slice analysed). The eligibility filter is doing most of the practical work; the score discriminates among the surviving set. Consistent with the v1.2 endpoint-typology intuition that gates carry type-specific constraints.
+
+**What did not change:**
+
+- The equation, all formal definitions, training data, model architecture.
+- v1.1 experimental results (83.63% RouterBench, AUC 0.8006 RouteLLM, 94.35% quality at 50% cost).
+- v1.2 endpoint typology forward references.
+- The canonical Python implementation in `router/`.
+
 ## [v1.2] - 2026-03-27
 
 ### Endpoint Typology
