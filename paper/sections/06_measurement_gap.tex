@@ -96,7 +96,7 @@ We present the 9 measurement designs attempted in the final research cycle, all 
 
 \subsection{Root Cause Analysis}
 
-The 9 failures share five structural root causes that are unlikely to be resolved by collecting more data or improving normalization algorithms.
+The 9 failures share five structural root causes that are unlikely to be resolved by collecting more data or improving normalization algorithms. These failures instantiate a well-known pattern: when a measure becomes a target, it ceases to be a good measure \citep{goodhart1975monetary, campbell1979assessing}. \citet{manheim2019categorizing} taxonomize four variants of this phenomenon (regressional, extremal, causal, adversarial), all of which appear in our measurement attempts.
 
 \paragraph{1. Metric Scale Incomparability.} Public benchmarks use fundamentally different measurement scales: accuracy percentages, Elo ratings, pass@k rates, and pairwise win rates. No statistically sound conversion exists between these scales. Min-max normalization creates comparable numbers but destroys the semantic content that would make them useful for routing.
 

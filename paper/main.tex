@@ -48,7 +48,7 @@
   bookmarks=true,
   bookmarksnumbered=true,
   pdfstartview=FitH,
-  pdftitle={S(M,T): Scoring AI Endpoints and the Measurement Gap in LLM Routing},
+  pdftitle={S(M,T): A Unified Scoring Framework for LLM Routing with Provable Convergence and the Measurement Gap},
   pdfauthor={Pranav Lakherwal}
 ]{hyperref}
 
@@ -60,7 +60,7 @@
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small\textit{S(M,T): Scoring AI Endpoints}}
+\fancyhead[L]{\small\textit{S(M,T): Unified LLM Routing}}
 \fancyhead[R]{\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancypagestyle{plain}{%
@@ -100,8 +100,8 @@
 
 % === Title Block ===
 \begin{center}
-{\LARGE\bfseries S(M,T): Scoring AI Endpoints\\[4pt]
-and the Measurement Gap in LLM Routing\par}
+{\LARGE\bfseries S(M,T): A Unified Scoring Framework for LLM Routing\\[4pt]
+with Provable Convergence and the Measurement Gap\par}
 
 \vspace{14pt}
 
@@ -110,11 +110,7 @@ and the Measurement Gap in LLM Routing\par}
 
 \vspace{10pt}
 
-{\normalsize March 2026}\\[4pt]
-{\small\textit{v1.2. Added endpoint typology analysis: six structural properties\\
-(autonomy, compositionality, state, determinism, scope, recursion depth)\\
-that the equation cannot yet express. See CHANGELOG.md for details.\\
-Previous version: \texttt{github.com/pranavlakherwal/smt-router/releases/tag/v1.1}}}
+{\normalsize March 2026}
 \end{center}
 
 \vspace{10pt}
@@ -122,15 +118,7 @@ Previous version: \texttt{github.com/pranavlakherwal/smt-router/releases/tag/v1.
 % === Abstract ===
 \begin{abstract}
 \noindent
-Routing AI queries to the right endpoint is becoming critical infrastructure as organizations spend billions on heterogeneous AI systems (LLMs, agents, scripts, tools). However, no existing framework scores these diverse endpoint types through a single equation, and no prior work documents why hand-designed scoring functions fail systematically.
-
-We propose S(M,T), a scoring framework that multiplies three terms: binary gates enforcing hard constraints, a weighted compatibility function, and a task-conditional cost penalty. Unlike existing routers, the gate layer encodes type-specific constraints (scripts have no context window, agents have no token cost), enabling a single equation to route across heterogeneous endpoint pools.
-
-We attempted to compute the compatibility functions from 2.76M public benchmark records. Fourteen designs across four research cycles all failed. The reasons are structural: metrics use incomparable scales, benchmark performance does not transfer to deployment, and complex properties collapse when reduced to single numbers. We call this the measurement gap.
-
-Replacing hand-designed functions with 16 learned bilinear forms (3.15M parameters, trained on 740K routing samples) achieves 83.63\% accuracy on RouterBench and AUC 0.8006 on RouteLLM, retaining 94.35\% of best-model quality at half the cost. The model generalizes across both benchmarks without benchmark-specific tuning. A 4.6$\times$ scaling experiment confirms that data quality, not model capacity, is the binding constraint.
-
-This enables a path toward general-purpose AI routing: one equation that scores any endpoint against any task, where the architect chooses the routing framework that fits their problem. Code: \texttt{github.com/pranavlakherwal/smt-router}.
+We present S(M,T), a unified scoring framework for routing queries to optimal language model endpoints. The framework combines multiplicative gating, weighted compatibility functions, and Boltzmann cost penalties into a single equation: $\smt = \left[\prod_j g_j(M,T)\right] \cdot \left[\sum_i w_i \cdot \phii(M,T)\right] \cdot e^{-\betavec(T) \cdot \mathbf{H}}$. The equation form is not new: under a log transform and softmax selection it is a constrained conditional logit (McFadden, 1974) with one log-sum compatibility regressor; our contribution is the parameterization of that form for heterogeneous endpoint routing, its analysis, and the empirical program. We prove convergence under Hajek conditions with logarithmic cooling, establish $O(\sqrt{KT\log T})$ regret bounds via contextual bandits reduction, and demonstrate weight identifiability when the phi matrix has full column rank. Grounding the framework against 2.76 million normalized benchmark records across 15,526 models from 7 public datasets, we discover a \textit{measurement gap}: 9 of 9 attempts to compute hand-designed phi functions from public benchmarks fail due to metric incomparability, domain transfer breakdown, and dimensional collapse. We report two complementary empirical results that point at this gap from different angles. \textbf{Benchmark result:} replacing the 16 hand-designed phis with 16 learned bilinear forms trained on 740,803 pairwise routing samples from 5 benchmark sources achieves 83.63\% accuracy on RouterBench (across 11 models) and AUC 0.8006 on RouteLLM (retaining 94.35\% of always-strong quality at 50\% cost). A scaling ablation (BilinearPhiEngine V3, 4.63$\times$ V1) confirms that data quality dominates model capacity for learned routing. \textbf{Production result:} a 61-day shadow deployment of the V1 scalar router with Robbins-Monro online learning across 1,580 routing decisions on a working developer's prompt stream achieves 94.7\% cost reduction against an always-Opus baseline, with 25.4\% of decisions routed to local agents rather than LLMs---the heterogeneous routing thesis realized as measured outcome. Offline replay of production outcome signals confirms that literature-prior phi functions (performance prediction, historical success, cascade position) collapse fastest under real feedback, while cross-node capability, complexity estimation, cost efficiency, and uncertainty signals concentrate. We refine the framework as V2 with two adversarially-verified additions: a headroom-capped composition operator restoring bounded scores, and a CVaR-based stochastic cost term necessary for agent-subprocess accounting.
 \end{abstract}
 
 \vspace{6pt}
@@ -139,21 +127,21 @@ This enables a path toward general-purpose AI routing: one equation that scores 
 
 % === Body ===
 \input{sections/01_intro}
-\input{sections/02_equation}
-\input{sections/03_measurement_gap}
-\input{sections/04_learned_phi}
-\input{sections/05_scaling}
-\input{sections/06_theory}
-\input{sections/07_related_work}
-\input{sections/08_discussion}
-\input{sections/09_conclusion}
+\input{sections/02_background}
+\input{sections/03_framework}
+\input{sections/04_convergence}
+\input{sections/05_adversarial}
+\input{sections/06_measurement_gap}
+\input{sections/07_empirical}
+\input{sections/07b_learned_phi}
+\input{sections/07c_v3_ablation}
+\input{sections/07d_production_validation}
+\input{sections/07e_endpoint_profiler}
+\input{sections/08_related_work}
+\input{sections/09_discussion}
+\input{sections/10_conclusion}
 
 % === Bibliography ===
 \bibliography{bibliography}
-
-% === Appendices ===
-\appendix
-\input{sections/appendix_convergence}
-\input{sections/appendix_adversarial}
 
 \end{document}

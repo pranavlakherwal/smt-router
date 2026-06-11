@@ -2,6 +2,36 @@
 
 All notable changes to S(M,T) will be documented in this file.
 
+## [v1.4] - 2026-06-11
+
+### Discrete-choice attribution correction + full May-31 section restructure
+
+This release corrects an attribution failure in the original paper. Our own
+nightly adversarial verification (Ramanujan engine) found, one day after the
+March publication, that the S(M,T) scoring form is mathematically a constrained
+conditional logit: the gates are a choice-set restriction and the cost term is
+a linear utility component (McFadden, 1974; Train, 2009), with Mixture-of-Experts
+gating (Jacobs et al., 1991; Shazeer et al., 2017) as ML prior art. The finding
+went unrouted for 2.5 months because no errata loop existed. Both problems are
+fixed.
+
+**What changed:**
+- Related work gains a Discrete Choice Theory paragraph with full attribution.
+- Novelty claims repositioned in the abstract, introduction, and conclusion:
+  the equation FORM is not new; the parameterization for heterogeneous endpoint
+  routing (local agents as routing destinations), the identifiability,
+  convergence, and regret analysis of that parameterization, the measurement-gap
+  result, and the 61-day production deployment are the contributions.
+- paper/ now carries the full May-31 restructured sections (07a-07e: production
+  validation, endpoint profiler) that the June-2 push missed.
+- paper/MCFADDEN_RESOLUTION.md: the exact algebra of what is and is not
+  equivalent, and the timeline of the miss.
+- paper/ERRATA_QUEUE.md: a standing public errata queue, now fed nightly by the
+  adversarial verification loop. Two items remain OPEN (decision-count snapshot
+  reconciliation; a stale novelty-survival sentence in Section 5) and will be
+  drained in the arXiv v2 pass.
+- Recompiled main.pdf; root SMT_Router_Paper_v1.4.pdf added.
+
 ## [v1.3] - 2026-06-02
 
 ### Shadow Routing Production Update + Rust SGLang Gateway Port (skeleton)

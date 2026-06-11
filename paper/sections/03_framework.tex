@@ -136,3 +136,45 @@ A natural concern is whether 16 phi functions are redundant. We verify orthogona
 \end{itemize}
 
 This ensures the 16 dimensions are not collapsible to a smaller set without information loss.
+
+\subsection{V2 Framework Refinements}
+\label{sec:v2_refinements}
+
+Two refinements to the V1 framework address structural weaknesses identified during the adversarial verification of Section~\ref{sec:adversarial} and the production validation of Section~\ref{sec:production_validation}. We refer to the refined framework as V2.
+
+\paragraph{V2 Refinement 1: Composition Headroom Cap.}
+The V1 symmetric composition operator for parallel multi-endpoint systems
+\[
+\smt(A \circ B) = \max(\smt_A, \smt_B) + \alpha \cdot \smt_A \smt_B \cdot (1 - |\smt_A - \smt_B|)
+\]
+violates the $[0,1]$ score invariant for any $\alpha > 0$ when both component scores are sufficiently high. For example, $\smt_A = \smt_B = 0.9, \alpha = 0.5$ yields $1.305$, exceeding the bounded range required for the framework's softmax and Boltzmann calculations.
+
+V2 introduces a headroom cap:
+\begin{equation}
+\label{eq:composition_v2}
+\smt(A \circ B) = \max(\smt_A, \smt_B) + \alpha \cdot \smt_A \smt_B \cdot (1 - |\smt_A - \smt_B|) \cdot (1 - \max(\smt_A, \smt_B))
+\end{equation}
+
+The $(1 - \max(\smt_A, \smt_B))$ factor ensures the synergy bonus collapses to zero when either component is already at the score ceiling, restoring boundedness without losing superlinearity at moderate scores. At $\smt_A = \smt_B = 0.5$, $\alpha = 0.5$, the operator yields $0.5625$ (a 12.5\% synergy bonus); at $\smt_A = \smt_B = 0.9$, it yields $0.9405$ (4.5\% bonus, scaled to remaining headroom); at $\smt_A = \smt_B = 1.0$, it yields $1.0$ exactly.
+
+Boundedness, weak monotonicity in $\smt_A$ and $\smt_B$, and synergy preservation at intermediate scores were verified by DeepSeek-Prover-V2-671B with 95\% confidence (Section~\ref{sec:adversarial}, Phase 3 Fixes run 2026-04-24).
+
+\paragraph{V2 Refinement 2: Stochastic Cost via CVaR.}
+The V1 deterministic cost factor $C(M, T) = e^{-\beta \cdot \text{cost\_rank}(M)}$ assumes a single scalar cost per endpoint. This is correct for atomic LLM API calls (the cost is a deterministic function of token count and per-token rate). It is wrong for two important cases:
+
+\begin{enumerate}
+    \item \textbf{Agent endpoints} (Section~\ref{sec:production_validation}). Local agents invoke downstream LLMs whose model choice, token count, and reasoning depth vary per invocation. The cost is a distribution, not a scalar.
+    \item \textbf{Pipeline endpoints.} Multi-stage pipelines have cost that depends on stage success, retry behavior, and stochastic branching. Again, a distribution.
+\end{enumerate}
+
+V2 replaces the deterministic cost factor with a CVaR-based stochastic cost term:
+\begin{equation}
+\label{eq:cost_v2}
+C(M, T) = \frac{1}{1 + \beta \cdot \text{CVaR}_{0.99}[C]}
+\end{equation}
+
+where $\text{CVaR}_{0.99}[C] = \mathbb{E}[C \mid C \geq \text{VaR}_{0.99}(C)]$ is the expected cost conditional on being in the worst $1\%$ tail of the cost distribution. We use $\alpha = 0.99$ (not $0.95$) to mitigate a residual gameability finding: an adversary aware that the system uses $\alpha = 0.95$ can concentrate catastrophic costs just above the $95$th percentile, escaping the average. The deeper $\alpha = 0.99$ requires a more aggressive attack to evade.
+
+Boundedness in $(0, 1]$, monotonicity in $\text{CVaR}_{0.99}[C]$, and reduction to the deterministic baseline when $C$ is degenerate were verified at 92\% confidence (mixed verdict due to two corrections from the verification run: the estimator converges at rate $O(1/(\sqrt{n}(1 - \alpha)))$, requiring approximately $20\times$ more tail samples than initially estimated, and a residual threshold-gaming risk that motivates a future spectral-risk-measure extension; see Section~\ref{sec:adversarial}).
+
+\paragraph{Why V2 Matters for Production.} Section~\ref{sec:production_validation} reports a 94.7\% cost reduction in 61-day production deployment. That number depends on a short-term fix (per-agent historical-average cost) that papers over the deterministic-cost limitation of V1. The structural fix is Equation~\ref{eq:cost_v2}: stochastic cost handles agent-subprocess cost as a first-class case, not as an after-the-fact correction.

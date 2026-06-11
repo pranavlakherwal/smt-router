@@ -60,3 +60,27 @@ Weight manipulation & Decaying $\alpha_n$ + simplex + gates & Equation~\ref{eq:r
 \end{table}
 
 These mitigations are not post-hoc patches. They emerge from the framework's multiplicative structure: gates provide hard safety guarantees that soft scoring cannot override, entropy regularization is a standard technique from reinforcement learning \citep{haarnoja2018sac}, and decaying step sizes are inherent to Robbins-Monro convergence \citep{robbins1951stochastic}.
+
+\subsection{Phase 3 Verification (March 2026 Run)}
+\label{sec:phase3_verification}
+
+The three attack vectors above were submitted to the Ramanujan verification engine (DeepSeek-Prover-V2-671B for proofs, DeepSeek-R1 for adversarial probes) on 2026-03-28. The engine verified seven properties at $\geq 85\%$ confidence, refuted two as expected (the adversarial cost attack and the adversarial composition attack found real vulnerabilities), and returned one inconclusive (a hallucinated citation reference subsequently removed). The two refuted properties motivated the V2 framework refinements (Section~\ref{sec:v2_refinements}).
+
+\subsection{Phase 3 Fixes Verification (April 2026 Run)}
+\label{sec:phase3_fixes_verification}
+
+The two V2 refinements (composition headroom cap, CVaR cost term) were submitted to the verification engine on 2026-04-24 as a follow-up run.
+
+\paragraph{Composition Headroom Cap: VERIFIED at 95\%.}
+DeepSeek-Prover-V2-671B confirmed that the revised operator $\smt(A \circ B) = \max(\smt_A, \smt_B) + \alpha \cdot \smt_A \smt_B \cdot (1 - |\smt_A - \smt_B|) \cdot (1 - \max(\smt_A, \smt_B))$ is bounded in $[0,1]$ for all admissible $\alpha, \smt_A, \smt_B$, satisfies weak monotonicity in $\smt_A$ and $\smt_B$, preserves synergy at intermediate scores, and avoids the unbounded recursive growth that the V1 operator exhibited.
+
+\paragraph{CVaR Cost Term: MIXED at 92\%.}
+Boundedness in $(0,1]$ and monotonicity in $\text{CVaR}_\alpha[C]$ confirmed. Two corrections from the verification run:
+
+\begin{enumerate}
+    \item \textbf{Convergence rate.} The CVaR estimator from $n$ samples converges at rate $O(1/(\sqrt{n}(1-\alpha)))$, not $O(1/\sqrt{n(1-\alpha)})$ as initially conjectured. Sample requirements for stable estimation are approximately $20\times$ higher than the initial estimate.
+    \item \textbf{Residual threshold-gaming.} An adversary aware that the system uses $\text{CVaR}_{\alpha}$ at a fixed $\alpha$ can concentrate catastrophic costs just above the $\alpha$-quantile, escaping the conditional average. We adopt $\alpha = 0.99$ (not $0.95$) as a short-term mitigation. A future spectral risk measure---integrating $\text{CVaR}_\alpha[C]$ across a range of $\alpha$ with a risk-aversion weighting function---would eliminate threshold-gaming entirely. This is logged as V2.6 backlog.
+\end{enumerate}
+
+\paragraph{Bonus: Novelty Falsification.}
+The same verification run included six L6 falsification challenges against the paper's core novelty claims (heterogeneous endpoint routing, Robbins-Monro convergence in this context, the measurement gap finding, bilinear phi functions, the three-part multiplicative S(M,T) structure, and the production cost-reduction result). All six devil's-advocate challenges were refuted at 85-95\% confidence. The paper's novelty claims survive adversarial attack.

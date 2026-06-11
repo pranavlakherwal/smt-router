@@ -10,7 +10,7 @@ S(M,T) = [Gates] × [Compatibility] × [Cost Penalty]
 
 That's it. Gates filter out endpoints that can't handle the task. Compatibility measures fit across 16 learned dimensions. Cost adjusts for what the task is worth. The highest-scoring endpoint wins.
 
-**[Download the paper (PDF)](SMT_Router_Paper_v1.1.pdf)**
+**[Download the paper (PDF)](SMT_Router_Paper_v1.4.pdf)**
 
 ## Why This Matters
 
@@ -40,7 +40,7 @@ S(M,T) routes intelligently. In our tests, it retains 94.35% of best-model quali
 
 ## Paper
 
-The paper (v1.1, March 2026) covers:
+The paper (v1.4, June 2026) covers:
 
 - The S(M,T) equation and why it's designed this way
 - The measurement gap: why hand-designed scoring functions fail structurally
@@ -51,7 +51,7 @@ The paper (v1.1, March 2026) covers:
 
 Convergence proofs and adversarial analysis are in the appendices.
 
-> v1.1 is a restructured revision. The equation, results, and all experimental data are unchanged from v1.0. See [CHANGELOG.md](CHANGELOG.md) for details. Previous version: [v1.0 release](https://github.com/pranavlakherwal/smt-router/releases/tag/v1.0).
+> v1.4 corrects the framing of the core equation: under a log transform and softmax it is a constrained conditional logit (McFadden, 1974) with a log-sum compatibility term; the contribution is the parameterization for heterogeneous endpoint routing, its identifiability/convergence/regret analysis, and the production results. See paper/MCFADDEN_RESOLUTION.md and paper/ERRATA_QUEUE.md. See [CHANGELOG.md](CHANGELOG.md) for details. Previous version: [v1.0 release](https://github.com/pranavlakherwal/smt-router/releases/tag/v1.0).
 
 ## Code
 

@@ -1,0 +1,94 @@
+\section{Endpoint Profiler: Bootstrapping Bilinear Embeddings via Feature Synthesis}
+\label{sec:endpoint_profiler}
+
+Section~\ref{sec:production_validation} (Three Views, Table~\ref{tab:three_views}) reported a 0\% agreement rate between V1 scalar routing and the offline-replayed BilinearPhi on the same 1{,}593 production prompts. The cause was vocabulary mismatch: BilinearPhi knew 48 canonical models from its RouterBench training corpus, while production routed across a pool of 344 LLMs and 5 local agents, with zero overlap. This section presents the \emph{Endpoint Profiler}: an agent that bootstraps 256-dimensional bilinear embeddings for previously-unseen endpoints via feature synthesis, closing the vocabulary gap without retraining the bilinear architecture.
+
+\subsection{The Bootstrapping Problem}
+
+The trained BilinearPhi engine computes phi scores as
+\[
+\hat{\phi}_i(M, T) = \sigma\!\left(\mathbf{e}_T^\top \mathbf{W}_i \mathbf{e}_M + b_i\right)
+\]
+where $\mathbf{e}_M \in \mathbb{R}^{256}$ is a learned model embedding. For canonical models in the training corpus, this embedding was learned end-to-end. For any new endpoint (a recently released free-tier model on OpenRouter; a local agent; a fine-tuned variant), there is no $\mathbf{e}_M$. The bilinear architecture cannot score the endpoint at all.
+
+A naive solution is to retrain the bilinear engine on a corpus that includes the new endpoints. This requires labeled data, retraining time, and is impossible for the heterogeneous endpoints (local agents, scripts) where no benchmark corpus exists. We instead propose to \emph{synthesize} the missing $\mathbf{e}_M$ from observable features.
+
+\subsection{Method: Three-Stage Synthesis}
+
+The Endpoint Profiler operates in three stages.
+
+\paragraph{Stage 1: Feature Extraction.} For each endpoint, the Profiler extracts an 80-dimensional feature vector $\mathbf{f}_M$ combining structural and behavioral information:
+
+\begin{itemize}
+    \item \textbf{Structural features (40 dims)}: 7-dim capability profile, parameter count (log), context length (log), tool/vision support, family one-hot (10), provider one-hot (10), and 7 benchmark scores (MMLU, HumanEval, GSM8K, etc.) when available.
+    \item \textbf{Judge features (40 dims)}: estimated by an LLM-as-judge (DeepSeek-R1) reading the model card, name, and metadata, then rating the model across 40 capability and behavioral dimensions on a 0--1 scale.
+\end{itemize}
+
+The LLM-as-judge stage was executed on all 398 endpoints (344 production LLMs + 5 agents + 48 canonical references for validation). Total spend was \$2.31. The judge produces consistent estimates across known reference models (GPT-4 rated 0.95 on coding-python; Mistral Medium 0.70; free-tier MiniMax 0.40) and provides calibrated profiles for endpoints without public benchmark data.
+
+\paragraph{Stage 2: Reference Mapping.} The Profiler treats the 48 canonical models as a reference corpus: each canonical model has both an observable feature vector $\mathbf{f}_M$ (from Stage 1) and a learned embedding $\mathbf{e}_M$ (from BilinearPhi's training). We fit two synthesizers on the 48 reference pairs:
+\begin{itemize}
+    \item \textbf{Ridge linear regression}: $\mathbf{e}_M \approx \mathbf{W}_p \mathbf{f}_M + \mathbf{b}_p$, with $\ell_2$ regularization to control the 80$\to$256 underdetermination.
+    \item \textbf{Weighted $k$-nearest-neighbors}: $\mathbf{e}_M \approx \sum_{j \in \mathcal{N}_k(M)} \alpha_j \mathbf{e}_j$, with softmax weights over feature-space cosine similarity.
+\end{itemize}
+The final synthesized embedding is the average of the two methods. A confidence score is attached based on cross-method agreement and feature-completeness.
+
+\paragraph{Stage 3: Bulk Synthesis.} Apply the fitted synthesizers to every production endpoint. The output is a JSON file mapping each endpoint id to its 256-dim embedding, confidence score, and provenance metadata. Production shadow router can now invoke BilinearPhi to score any endpoint, not just the canonical 48.
+
+\subsection{Validation}
+
+We validate the synthesis via leave-one-out cross-validation on the 48 reference models. For each canonical $M$: hold out $M$, refit both synthesizers on the remaining 47 pairs, predict $\hat{\mathbf{e}}_M$ from $\mathbf{f}_M$, compare to the true $\mathbf{e}_M$ via cosine similarity.
+
+\begin{table}[h]
+\centering
+\caption{Leave-one-out cosine similarity between synthesized and true canonical embeddings, with and without LLM-as-judge features.}
+\label{tab:profiler_validation}
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & \textbf{Structural features only (40d)} & \textbf{Structural + judge (80d)} \\
+\midrule
+Ridge linear & 0.279 & 0.287 \\
+K-NN ($k$=5) & 0.245 & 0.288 \\
+\textbf{Ensemble} & \textbf{0.274} & \textbf{0.304} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two observations. First, the structural-only baseline already exceeds chance ($r > 0$ for all methods), but cosine $\sim$0.27 indicates the 40-dim feature vector is too low-rank to reconstruct the 256-dim embedding space precisely. Second, adding judge features improves cosine by 0.03, with cross-method agreement (confidence) rising from 0.65 to 0.88. The remaining gap is structural: 48 reference pairs is too few for a high-rank mapping. Approaching the cosine $\sim$0.65 quality observed for in-corpus models would require expanding the reference corpus to $\sim$200+ models, which in turn requires retraining the bilinear engine on a broader training set---a future-work direction.
+
+\subsection{Effect on the Three Views Comparison}
+
+Despite modest validation cosine, the synthesized embeddings substantially change the §7d Three Views result. Re-running the offline bilinear replay on the same 1{,}622 production prompts, now with Profiler embeddings active for all 350 production endpoints:
+
+\begin{table}[h]
+\centering
+\caption{V1 scalar, BilinearPhi (48-model corpus only), and BilinearPhi + Profiler on the same 1{,}622 production prompts.}
+\label{tab:three_views_v2}
+\small
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Metric} & \textbf{V1 scalar} & \textbf{Bilinear (48 only)} & \textbf{Bilinear + Profiler} \\
+\midrule
+Baseline (always-Opus, USD) & \$101.30 & \$101.30 & \$101.30 \\
+Routed cost (USD) & \$5.34 & \$92.22 & \$49.00 \\
+\textbf{Cost reduction} & \textbf{94.73\%} & \textbf{7.94\%} & \textbf{51.63\%} \\
+Agent picks (\%) & 25.4 & 0 (structural) & 0 (structural) \\
+Agreement with V1 actual (\%) & --- & 0.0 & 0.0 \\
+Endpoints scorable & 350 & 48 & 350 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Profiler-augmented bilinear achieves a 51.63\% cost reduction versus the 7.94\% baseline---a $6.5\times$ improvement that comes purely from the embedding bootstrap, no retraining. Yet the comparison reveals an honest limitation: agreement with V1 remains 0\%, and the bilinear still picks zero agents. This is because the synthesizers were fit on benchmark-derived pairs (RouterBench scores correlated with learned embeddings); they have no training signal for the routing patterns under which V1's online learner routes 25\% of decisions to local agents.
+
+\subsection{Interpretation and Future Work}
+
+The Profiler shows that the bilinear vocabulary gap can be closed substantially via feature synthesis, but not eliminated. The two complementary directions that future work would pursue:
+
+\begin{enumerate}
+    \item \textbf{Outcome-grounded fine-tuning.} The 402 production decisions where V1 routed to an agent constitute weak supervision: each decision implies a (prompt, agent, observed-quality) tuple. Fine-tuning the agent embeddings via gradient descent through the frozen bilinear matrices, with the production tuples as training signal, would teach the bilinear to recognize agent-favorable prompts. This is the next iteration's V3 direction.
+    \item \textbf{Expanded reference corpus.} Increasing the 48-model reference to the 145 production models with benchmark data would require retraining BilinearPhi on an expanded corpus, but would push leave-one-out cosine toward 0.5+ and likely recover meaningful agreement with V1.
+\end{enumerate}
+
+The Profiler is shipped as agent code at \texttt{agents/profiler/} with a CLI for on-demand profiling of new endpoints. As new models are added to the production registry, the Profiler can be invoked to generate their embeddings without any retraining or downtime. This operationalizes the unification thesis at the system level: same equation, same scoring algebra, same online routing path, with bootstrap-quality embeddings for endpoints that fall outside the benchmark training distribution.

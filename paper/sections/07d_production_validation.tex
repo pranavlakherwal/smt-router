@@ -1,0 +1,219 @@
+\section{Production Validation: Sixty-One Days of Shadow Routing}
+\label{sec:production_validation}
+
+Section~\ref{sec:learned_phi} reported 83.63\% accuracy on RouterBench using a trained bilinear architecture (BilinearPhiEngine). That number is the benchmark headline. This section reports a second result from a different question: when the S(M,T) framework with seed-prior weights and online Robbins-Monro learning is deployed in production over an extended period, what do we observe? We answer with 1{,}580 routing decisions collected across 61 days (March~20--May~24, 2026) of continuous shadow routing on a working developer's prompt stream.
+
+We report four findings, two of which are bugs discovered during this paper's empirical audit. The bugs are part of the result: they characterize what shipping a learner in production actually looks like.
+
+\subsection{Deployment}
+
+The shadow router (\texttt{scripts/shadow\_router.py}, v2.4) is hooked into a Claude Code session via the \texttt{UserPromptSubmit} event. Every prompt the user submits is independently routed by the S(M,T) framework before the prompt is executed. The router's decision is logged to a SQLite database; the actual execution proceeds through the unchanged production path (\texttt{claude-opus-4} as the always-on baseline). This shadow-mode design lets us collect routing decisions and cost-savings estimates without exposing the user to any potential quality regression.
+
+The endpoint pool contains 344 LLMs across 56 providers plus 5 local agents (auto-search, thinking, ramanujan, session-capture, index-research). Of the 16 phi functions, the production system uses the fast scoring path described in Section~\ref{sec:framework}: a Boltzmann cost-decay form $e^{-\beta \cdot r}$ with $\beta = 0.10$ multiplied by a capability--complexity product. Weights are initialized from the literature-prior seed (Section~\ref{sec:empirical}, ¶48) and updated online via Robbins-Monro after each session via the outcome collector (\texttt{scripts/outcome\_collector.py}).
+
+\subsection{Finding 1: 94.7\% Cost Reduction Against Always-Opus (Honest Accounting)}
+
+Table~\ref{tab:production_cost} summarizes the cost reduction observed across 1{,}580 decisions. The baseline is the cost the system would have incurred had every prompt been routed to \texttt{claude-opus-4} (current production default). The routed cost is what the router selected, with agent-subprocess costs counted explicitly (Section~\ref{sec:agent_cost_correction}).
+
+\begin{table}[h]
+\centering
+\caption{Production cost reduction over 61 days of shadow routing, with agent-subprocess costs included.}
+\label{tab:production_cost}
+\small
+\begin{tabular}{lr}
+\toprule
+\textbf{Metric} & \textbf{Value (USD)} \\
+\midrule
+Baseline (always-Opus) & \$99.66 \\
+Routed (S(M,T) selection) & \$5.30 \\
+\midrule
+Total savings & \$94.36 \\
+Reduction & 94.68\% \\
+Savings per 1{,}000 prompts & \$59.72 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The reduction is not driven by a single optimization. It compounds across three orthogonal mechanisms:
+
+\begin{enumerate}
+    \item \textbf{Free-tier routing.} 842 of 1{,}580 decisions (53.3\%) selected the \texttt{minimax-m2.5:free} endpoint; an additional 164 (10.4\%) went to \texttt{stepfun-step-3.5-flash:free}; 79 (5.0\%) went to \texttt{hermes-3-llama-3.1-405b:free}. Together: 68.7\% of all production decisions routed to free OpenRouter tiers.
+    \item \textbf{Local agent routing.} 402 of 1{,}580 decisions (25.4\%) selected a local agent (auto-search, thinking, or ramanujan). These have non-zero subprocess cost (\$0.010--\$0.030 per invocation, summing to \$5.30 across all agent decisions) but remain far cheaper than the always-Opus baseline.
+    \item \textbf{Selective premium use.} Only 56 of 1{,}580 decisions (3.5\%) selected \texttt{claude-sonnet-4} or another paid model; the rest were free or near-free.
+\end{enumerate}
+
+The 25.4\% local-agent fraction is the empirical realization of the heterogeneous routing thesis. A router that scored only LLMs would route those decisions to LLMs, paying full \texttt{claude-opus-4} prices for capability already present in the agent registry.
+
+\subsection{Agent-Subprocess Cost Correction}
+\label{sec:agent_cost_correction}
+
+An earlier draft of this section reported a 99.99\% cost reduction. That figure was the result of a production-code accounting shortcut: \texttt{route\_prompt\_fast} treated every agent dispatch as zero-cost, on the (false) assumption that local agents have no token cost. In reality, four of the five local agents invoke downstream LLMs to fulfill their tasks: \texttt{auto-search} uses DeepSeek-V3, \texttt{thinking} uses DeepSeek-R1, and \texttt{ramanujan} uses DeepSeek-Prover-V2-671B. Their per-invocation costs are non-zero (\$0.010--\$0.030).
+
+We discovered this during empirical audit for this paper and applied a medium-grade fix: each agent now has a historical-average per-invocation cost (Table~\ref{tab:agent_costs}), used in both the scoring function (\texttt{\_score\_agent}) and the routed-cost logging path (\texttt{route\_prompt\_fast}). All 402 historical agent decisions were re-costed using these averages.
+
+\begin{table}[h]
+\centering
+\caption{Per-agent average invocation cost, derived from downstream LLM usage.}
+\label{tab:agent_costs}
+\small
+\begin{tabular}{llr}
+\toprule
+\textbf{Agent} & \textbf{Downstream LLM(s)} & \textbf{Avg Cost (USD)} \\
+\midrule
+auto-search & DeepSeek-V3 (\$0.28/\$0.42 per M) & \$0.010 \\
+ramanujan & DeepSeek-Prover-V2-671B, DeepSeek-R1 & \$0.015 \\
+thinking & DeepSeek-R1 (\$0.70/\$2.50 per M) & \$0.030 \\
+session-capture & None (local regex) & \$0.000 \\
+mcp-* (Notion, Google) & None (API only) & \$0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This finding is significant beyond the headline number. The deterministic cost factor $e^{-\beta \cdot \text{cost\_rank}}$ used in the V1 production code is wrong in principle for agents: their cost is a distribution over possible downstream LLM invocations, not a fixed scalar. The V2 framework refinement (Section~\ref{sec:framework} ¶V2) addresses this by replacing the deterministic cost factor with the CVaR-based stochastic cost term
+\[
+C(M, T) = \frac{1}{1 + \beta \cdot \text{CVaR}_{0.99}[C]}.
+\]
+Agents are the canonical case where this matters. A short-term fix (per-agent historical averages) restores honest accounting; the structural fix is the V2 stochastic cost term.
+
+\subsection{Finding 2: Coding-Dominant Workload}
+
+The task-type distribution (Table~\ref{tab:prod_task_distribution}) is heavily skewed toward coding (61.8\%) and knowledge retrieval (19.8\%). This is consistent with the prompt stream of a software engineer using Claude Code as a daily driver. We make no claim about generalization to other workloads; the routing distribution we observe is conditional on this workload, and any benchmark that does not match this conditional distribution will produce different routing patterns.
+
+\begin{table}[h]
+\centering
+\caption{Task-type distribution across 1{,}580 production decisions.}
+\label{tab:prod_task_distribution}
+\small
+\begin{tabular}{lrr}
+\toprule
+\textbf{Task type} & \textbf{Decisions} & \textbf{\%} \\
+\midrule
+coding & 976 & 61.8 \\
+knowledge & 313 & 19.8 \\
+reasoning & 97 & 6.1 \\
+general & 72 & 4.6 \\
+long\_context & 47 & 3.0 \\
+instruction\_following & 46 & 2.9 \\
+math & 29 & 1.8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This is a real but mild generalization concern. We discuss its implications for paper claims in Section~\ref{sec:discussion}.
+
+\subsection{Finding 3: Two Production Bugs Discovered During Empirical Audit}
+
+In preparing this section, we re-examined the production learner state. The \texttt{learned\_weights.json} file reported a decision count of 11, despite 1{,}328 outcome signals having been collected. Investigation surfaced two production bugs that materially affect what the published BilinearPhiEngine results say about learning behavior in deployment. We document both: they are not incidental implementation defects but characterize the gap between batch-trained academic numbers and online-trained production behavior.
+
+\paragraph{Bug 1: Decision-count not persisted across restarts.} The \texttt{WeightLearner} class loads its weights from disk via \texttt{load\_learned\_weights()} on instantiation but hardcodes \texttt{self.\_decision\_count = 0}. The persisted JSON file contained the correct count, but the loader silently dropped it. Consequence: every session restart reset the Robbins-Monro step-size schedule to $\alpha_1 = 1/(1+1) = 0.5$, causing the first update of each session to perturb weights by 50\% rather than the cooled $1/(n+1)$ rate. The expected stochastic-approximation convergence (Section~\ref{sec:convergence}) requires a non-resetting cooling schedule. Without it, the learner re-cold-starts on every session, repeatedly over-weighting whichever signal arrives first.
+
+\paragraph{Bug 2: Fast-path routing omits the phi breakdown.} The production hook (\texttt{route\_prompt\_fast}) returns \texttt{phi\_breakdown: \{\}} for every decision in the interest of latency (target $<85$~ms). Only the diagnostic full-engine path (\texttt{route\_prompt\_full}) computes the per-phi scores needed by the learner. Of 1{,}197 outcome signals passing the confidence gate, only 52 (4.3\%) joined a routing decision with a populated breakdown. The remaining 1{,}145 signals contained quality information but could not produce a gradient.
+
+Both bugs reflect a tension that is general to deploying learned routers: the latency budget that justifies a fast scoring path conflicts with the diagnostic logging required to support online learning. The medium fix we apply (Appendix~\ref{app:bug_fixes}) reconstructs an approximate phi breakdown from data already computed in the fast path. Warm-cache latency remains $\sim$0.6~ms; gradient signal is restored on every decision.
+
+\subsection{Finding 4: Replay Confirms the Measurement Gap}
+
+To recover what the learner \emph{would} have produced if the bugs had not been present, we replay all 1{,}197 confidence-gate-passing outcome signals through the fixed Robbins-Monro learner offline. Of these, 52 join to non-empty phi breakdowns (the diagnostic full-engine path was used for those). We feed only the 52 signals with usable gradients. Initial weights are the literature-prior seed.
+
+Table~\ref{tab:replay_weights} shows the result. Twelve of sixteen phi functions converged to zero. Four phis concentrated. The mass moved away from the literature priors and toward four specific phis: cross-node capability, complexity estimation, cost efficiency, and uncertainty.
+
+\begin{table}[h]
+\centering
+\caption{Seed vs.\ replay-learned weights after 52 updates on production outcome signals.}
+\label{tab:replay_weights}
+\small
+\begin{tabular}{llrrr}
+\toprule
+\textbf{Phi} & \textbf{Name} & \textbf{Seed} & \textbf{Replay} & \textbf{$\Delta$} \\
+\midrule
+$\phi_{10}$ & cross\_node\_capability & 0.008 & \textbf{0.410} & +0.402 \\
+$\phi_3$ & complexity\_estimator & 0.106 & \textbf{0.366} & +0.260 \\
+$\phi_{14}$ & cost\_efficiency\_ratio & 0.088 & \textbf{0.169} & +0.081 \\
+$\phi_7$ & uncertainty\_score & 0.016 & \textbf{0.055} & +0.039 \\
+\midrule
+$\phi_4$ & performance\_predictor & 0.176 & 0.000 & --0.176 \\
+$\phi_6$ & historical\_success & 0.141 & 0.000 & --0.141 \\
+$\phi_8$ & cascade\_position & 0.123 & 0.000 & --0.123 \\
+$\phi_{13}$ & reasoning\_depth & 0.106 & 0.000 & --0.106 \\
+$\phi_1$ & constraint\_filter & 0.071 & 0.000 & --0.071 \\
+$\phi_{16}$ & instruction\_adherence & 0.071 & 0.000 & --0.071 \\
+$\phi_2$ & domain\_classifier & 0.035 & 0.000 & --0.035 \\
+(others) & --- & various & 0.000 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The literature priors emphasized predicted accuracy ($\phi_4$, prior 5.0), historical success ($\phi_6$, prior 4.0), and cascade position ($\phi_8$, prior 3.5) as the three most important phi functions for routing. The production data rejects all three. The phis that concentrated were either deprioritized in the literature (cross-node capability, prior 0.5) or moderately prioritized (complexity estimator, prior 3.0; cost efficiency, prior 2.5).
+
+This is the measurement gap (Section~\ref{sec:measurement}) made concrete from production data. Benchmark-derived priors over-weight phi functions whose signal degrades under domain transfer. The phi functions that survive 52 updates of real outcome feedback are those measurable directly from the routing context itself: \emph{is this endpoint a local agent or an LLM} (cross-node), \emph{how complex is the task} (complexity estimator), \emph{how much will this cost} (cost efficiency), \emph{how confident is the classifier} (uncertainty).
+
+We do not claim 52 updates is sufficient for convergence. The Robbins-Monro analysis (Section~\ref{sec:convergence}) requires substantially more samples for any tight convergence claim, and even after the bug fix, the production stream will need additional weeks to produce a defensible learning curve. What we do claim: a single-phase, batch-bilinear architecture trained on RouterBench (Section~\ref{sec:learned_phi}) and an online-scalar learner deployed on production outcomes both point at the measurement gap as the practically dominant problem in real-world routing. The benchmark and the production data agree.
+
+\subsection{What Production Validates and What It Does Not}
+
+The production deployment validates three claims of this paper:
+
+\begin{itemize}
+    \item \textbf{Heterogeneous routing is operational.} 25.6\% of production decisions selected local agents, not LLMs. The framework treats both within a unified scoring algebra.
+    \item \textbf{Multiplicative gating is durable.} Over 61 days, no decision violated boundedness or hit a divide-by-zero path. The framework's $[0, 1]$ score invariants held.
+    \item \textbf{The measurement gap is empirical, not just adversarial.} The phi functions that the literature ranks highest collapse fastest under real outcome feedback.
+\end{itemize}
+
+The deployment does not validate:
+
+\begin{itemize}
+    \item \textbf{Convergence rate.} The Robbins-Monro convergence proof requires more decisions than we have to make a tight claim. We make none.
+    \item \textbf{Workload generalization.} The 61.6\% coding skew limits any claim about routing distributions outside software-engineering workloads.
+    \item \textbf{Quality preservation.} The outcome signals score 89.5\% in the \textit{good} bucket and 6.4\% in the \textit{high} bucket. This is consistent with the routed endpoints being adequate, but the signals are proxies (acceptance, continuation, error-flow), not ground truth.
+\end{itemize}
+
+These limitations are honest. The cost-reduction headline is supported. The convergence headline is not yet supported. Section~\ref{sec:discussion} discusses what production-scale validation would look like next.
+
+\subsection{Three Views of the Same 1{,}593 Prompts}
+\label{sec:three_views}
+
+A natural question, given that Section~\ref{sec:learned_phi} reports a benchmark accuracy of 83.63\% for the trained bilinear architecture (BilinearPhiEngine) and this section reports a 94.7\% production cost reduction for the scalar router with online learning: which router would have been better in production? We answer by feeding all 1{,}593 historical production prompts through the trained BilinearPhi model offline and comparing its choices against the V1 scalar router's actual decisions.
+
+\paragraph{Methodology.} For each production prompt, we encode it with the same frozen sentence-transformer (\texttt{all-mpnet-base-v2}) BilinearPhi was trained on, then score all 48 canonical models BilinearPhi knows. We take its top-1 choice and map it to the nearest production endpoint via a family-substring heuristic (\texttt{gpt-4} family $\to$ \texttt{openai/gpt-4}, etc.). We then compute the counterfactual cost under that choice using mid-tier paid pricing as a conservative estimate. We record the agreement rate with V1 and the cost differential.
+
+\paragraph{Three limitations we accept as findings.}
+\begin{enumerate}
+    \item \textbf{Vocabulary mismatch.} BilinearPhi was trained on 48 canonical models, most of which are first- and second-generation (\texttt{gpt-4}, \texttt{claude-2}, \texttt{mistral-medium}, \texttt{wizardlm-13b}). The production pool of 344 LLMs is dominated by newer free OpenRouter tiers (\texttt{minimax-m2.5:free}, \texttt{stepfun-step-3.5-flash:free}) that BilinearPhi has no embeddings for.
+    \item \textbf{Agent blindness.} BilinearPhi has zero embeddings for local agents (auto-search, thinking, ramanujan). On the 402 production prompts that V1 routed to an agent (25.2\% of all decisions), BilinearPhi structurally cannot make the same choice.
+    \item \textbf{No ground truth.} We measure agreement with V1 and counterfactual cost, not ``accuracy.'' Production prompts have no ground-truth labels.
+\end{enumerate}
+
+\paragraph{Results.} Table~\ref{tab:three_views} summarizes the comparison.
+
+\begin{table}[h]
+\centering
+\caption{V1 scalar (executed) vs.\ BilinearPhi (offline replay) on the same 1{,}593 production prompts.}
+\label{tab:three_views}
+\small
+\begin{tabular}{lrr}
+\toprule
+\textbf{Metric} & \textbf{V1 scalar} & \textbf{BilinearPhi (offline)} \\
+\midrule
+Decisions evaluated & 1{,}593 & 1{,}593 \\
+Baseline cost (always-Opus, USD) & \$100.17 & \$100.17 \\
+Routed cost (USD) & \$5.30 & \$92.22 \\
+\textbf{Cost reduction vs.\ Opus} & \textbf{94.71\%} & \textbf{7.94\%} \\
+Agent picks & 402 (25.2\%) & 0 (structural) \\
+Median decision latency & 0.55~ms & $\sim$30--50~ms \\
+Agreement rate with V1 actual & --- & 0.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Reading the result.} BilinearPhi---the model that achieves 83.63\% accuracy on RouterBench---would have spent \$92.22 routing the same 1{,}593 production prompts that V1 scalar+RM routed for \$5.30. Cost reduction collapses from 94.7\% to 7.9\%. The agreement rate is 0\% because the two routers operate over essentially disjoint endpoint vocabularies: BilinearPhi knows 48 benchmark-trained canonical models; the production pool is dominated by 296 newer free-tier models and 5 local agents that BilinearPhi was never trained on. Section~\ref{sec:endpoint_profiler} addresses this gap via an Endpoint Profiler agent that bootstraps bilinear embeddings for previously-unseen endpoints, raising bilinear's cost reduction to 51.63\%.
+
+This is not a bilinear-vs-scalar comparison in any clean sense. It is a \emph{benchmark-trained vs.\ production-deployed} comparison. The bilinear model is the more accurate router on the corpus it was trained on. The scalar+RM router is the more cost-effective router on the workload it is actually serving. The two answer different questions and we report both.
+
+\paragraph{The frame this clarifies.} A reviewer or practitioner asking ``which router should I use?'' is asking the wrong question. The correct framing is two-axis:
+
+\begin{itemize}
+    \item \textbf{If you have ground-truth labels for your prompt distribution and a fixed model pool that overlaps with public benchmarks}: train the bilinear. You will extract 83.63\% accuracy and a defensible Pareto frontier on cost-quality.
+    \item \textbf{If you have a heterogeneous endpoint pool that includes agents, scripts, or frontier-fresh free models the benchmarks do not cover}: deploy the scalar with online learning. You will route 25\%+ of traffic to non-LLM endpoints and capture a 90\%+ cost reduction that the bilinear architecturally cannot replicate.
+\end{itemize}
+
+The S(M,T) framework supports both. The V2 refinements (Section~\ref{sec:v2_refinements}) bring the production scalar's accounting up to the standard the bilinear naturally satisfies on its narrower corpus. Future work---particularly the V2 stochastic cost term applied to bilinear embeddings of agent endpoints, and the V2 type dispatch giving agents first-class phi vocabulary---would let a single architecture inherit the strengths of both. This is V3 territory.

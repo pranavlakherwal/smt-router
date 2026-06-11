@@ -13,11 +13,15 @@ The proliferation of language models with different cost-quality tradeoffs has c
 
 \subsection{Scoring Functions for Model Selection}
 
-Existing routing scores are typically additive: $S = \sum_i w_i f_i$ where $f_i$ are features and $w_i$ are weights. This structure has a known vulnerability: a model that catastrophically fails one requirement can still achieve a high total score by excelling at others. The Product-of-Experts framework \citep{hinton2002poe} addresses this through multiplicative combination, where any single expert can veto the prediction.
+Existing routing scores are typically additive: $S = \sum_i w_i f_i$ where $f_i$ are features and $w_i$ are weights. This weighted-sum structure has deep roots in additive utility theory \citep{fishburn1967additive} and multi-attribute decision analysis \citep{keeney1976decisions}, which established axiomatic conditions under which a decision-maker's preferences decompose into an additive value function. The structure has a known vulnerability: a model that catastrophically fails one requirement can still achieve a high total score by excelling at others. The Product-of-Experts framework \citep{hinton2002poe} addresses this through multiplicative combination, where any single expert can veto the prediction.
 
 \subsection{Stochastic Approximation}
 
 The Robbins-Monro algorithm \citep{robbins1951stochastic} provides a framework for online parameter estimation under noisy observations. Given a target function $f(\theta) = 0$, the update $\theta_{n+1} = \theta_n + \alpha_n \cdot (Y_n - f(\theta_n))$ converges to the root under standard conditions (bounded noise, decaying step sizes). This is the theoretical foundation for the weight learning procedure in Section~\ref{sec:convergence}.
+
+\subsection{Discrete Choice Theory}
+
+The Boltzmann selection mechanism $P(M) \propto e^{-\beta \cdot H(M)}$ used in S(M,T) is structurally equivalent to the conditional logit model from discrete choice theory \citep{mcfadden1974conditional}. \citet{train2009discrete} provides a comprehensive treatment of discrete choice methods, including the multinomial logit and its extensions to mixed logit and probit models. The connection grounds S(M,T)'s cost layer in a well-established econometric framework.
 
 \subsection{Simulated Annealing}
 
