@@ -22,4 +22,6 @@ ots info SMT_Router_Paper_v1.4.pdf.ots         # shows the Bitcoin block height
 ots verify SMT_Router_Paper_v1.4.pdf.ots       # full check, needs a Bitcoin node
 ```
 
+**Attested 4 November 2026 (IST).** The public v1.4 PDF's proof sits in Bitcoin block 974395,974423,974430; the July 2026 roadmap PDF's proofs sit in blocks 957741 and 957754. `ots info` on each `.ots` prints its block.
+
 Registered by P0P (PnotP), Pranav Lakherwal. Method: OpenTimestamps, first used on 13 July 2026.
