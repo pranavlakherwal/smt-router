@@ -16,9 +16,9 @@ That's it. Gates filter out endpoints that can't handle the task. Compatibility 
 
 The world is headed toward spending billions on AI tokens every year. Most routing today is manual or nonexistent. Every query gets sent to the same model, regardless of difficulty. A formatting task and a complex reasoning problem get the same $0.06 API call.
 
-S(M,T) routes intelligently. In our tests, it retains 94.35% of best-model quality at half the cost. The savings compound: across a large engineering team, intelligent routing can cut AI spend by 80%+ while matching quality on the tasks that matter.
+S(M,T) routes intelligently. In the June 2026 benchmark replay it retained 94.35% of best-model quality at half the cost (offline, public benchmarks). The savings compound: across a large engineering team, intelligent routing can cut AI spend by 80%+ while matching quality on the tasks that matter.
 
-## Key Results
+## Key Results (paper v1.4, June 2026; offline public benchmarks, not re-run since)
 
 | Benchmark | Result |
 |-----------|--------|
@@ -82,11 +82,23 @@ The `router/` directory contains the core implementation:
 | RewardBench | 2,712 | 31 | Accuracy (0/1) |
 | **Total** | **740,803** | **48** | |
 
-## Coming Soon: Shadow Router
+## What we can say about reliability (4 November 2026)
 
-An open-source shadow router that monitors your queries, calculates which endpoint it would assign, and logs the result. No interference with your workflow. Think of it like a clinical trial for your AI usage: observe, measure, compare, then decide.
+The benchmark table above is from the paper, June 2026: offline replays of public benchmarks, run once by us and not re-run since. Everything in this section is measured on our own systems, with the date and the command, and it is labelled directional. No outside party has checked it.
 
-If you're interested in testing it: pranav@pranavlakherwal.com
+| Measure | Value | Date | Note |
+|---|---|---|---|
+| Cost in offline replay, 1,622 real routing decisions | $101.30 to $49.00, a 51.6% cut | 25 May 2026 | cost only. Quality was not measured in that replay |
+| Recommended route matches the best observed route, held-out set | 3 of 20 tasks, 95% interval 5% to 36% | 4 Nov 2026 | 20 SciFact tasks, 9 to 13 models each, checker with no model in it. The live recommendation was one fixed model on every task |
+| Same, counting a model as best only with 5 or more runs | 5 of 20, interval 11% to 47% | 4 Nov 2026 | robustness variant of the same command |
+
+What the second row measures: the shadow router that runs on our own prompts, which scores capability times complexity times cost from a static registry. It does not measure the learned bilinear scorer in `router/learned_phi.py`, which has not been run on those tasks. One task type is not a routing test, and 20 tasks give a wide interval by construction.
+
+What would produce a number worth quoting: 200 self-contained tasks across three task types (math with a boxed answer, citation resolution, SciFact), five candidate models, a checker with no model in it, about $2 at current rates. The measurement script and the sealed held-out set live in our research tree; the method is `route_agreement.py` (per task, best observed mean correctness versus the recommended route, Wilson interval).
+
+Until that runs, the honest recommendation text is: S(M,T) is a scoring form with a cost replay behind it, not a validated router. Use it to see what a router would pick and what it would cost. Do not switch live traffic on the strength of this repository alone.
+
+The shadow router that logs a pick beside every prompt without changing it runs inside our own systems today (19,182 logged decisions, 20 March to 4 November 2026). It is not yet packaged for release.
 
 ## Requirements
 
