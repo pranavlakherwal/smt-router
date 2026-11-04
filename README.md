@@ -82,23 +82,31 @@ The `router/` directory contains the core implementation:
 | RewardBench | 2,712 | 31 | Accuracy (0/1) |
 | **Total** | **740,803** | **48** | |
 
-## What we can say about reliability (4 November 2026)
+## What we can say about reliability (5 November 2026)
 
-The benchmark table above is from the paper, June 2026: offline replays of public benchmarks, run once by us and not re-run since. Everything in this section is measured on our own systems, with the date and the command, and it is labelled directional. No outside party has checked it.
+The benchmark table above is from the paper, June 2026: offline replays of public benchmarks, run once by us and not re-run since. Everything in this section is measured on our own systems, with the date, and it is labelled directional. No outside party has checked it.
 
 | Measure | Value | Date | Note |
 |---|---|---|---|
 | Cost in offline replay, 1,622 real routing decisions | $101.30 to $49.00, a 51.6% cut | 25 May 2026 | cost only. Quality was not measured in that replay |
-| Recommended route matches the best observed route, held-out set | 3 of 20 tasks, 95% interval 5% to 36% | 4 Nov 2026 | 20 SciFact tasks, 9 to 13 models each, checker with no model in it. The live recommendation was one fixed model on every task |
-| Same, counting a model as best only with 5 or more runs | 5 of 20, interval 11% to 47% | 4 Nov 2026 | robustness variant of the same command |
+| Recommended route correct, 200 tasks in four task sets, five routes, every route on every task | 171 of 200, 86% (95% interval 80% to 90%) | 5 Nov 2026 | best single route 174 of 200. Empty replies at a 1,000-token cap were asked again at 4,000 |
+| Same, at a 1,000-token answer budget (the pre-registered reading) | 146 of 200, 73% (67% to 79%) | 5 Nov 2026 | the recommended route gave no answer on 46 tasks. Best single route 163 |
+| Does the best route change with the task set? | no, p = 0.20 once empty replies were re-asked | 5 Nov 2026 | at the 1,000-token cap it looked like yes, p = 0.0005. The cap produced that signal |
+| Recommended route matches the best observed route, 20 SciFact tasks with repeated runs | 3 of 20 (5% to 36%) | 4 Nov 2026 | one fixed model was recommended on all 20 |
 
-What the second row measures: the shadow router that runs on our own prompts, which scores capability times complexity times cost from a static registry. It does not measure the learned bilinear scorer in `router/learned_phi.py`, which has not been run on those tasks. One task type is not a routing test, and 20 tasks give a wide interval by construction.
+Task sets: GSM8K, MMLU, ARC-Challenge and SciFact, 50 tasks each, drawn with a fixed seed. Checkers hold no model. The question, the sets, the routes and the statistics were written down before the first call.
 
-What would produce a number worth quoting: 200 self-contained tasks across three task types (math with a boxed answer, citation resolution, SciFact), five candidate models, a checker with no model in it, about $2 at current rates. The measurement script and the sealed held-out set live in our research tree; the method is `route_agreement.py` (per task, best observed mean correctness versus the recommended route, Wilson interval).
+What these rows measure: the shadow router that runs on our own prompts, which scores capability times complexity times cost from a static registry. They do not measure the learned bilinear scorer in `router/learned_phi.py`, which has not been run on these tasks.
 
-Until that runs, the honest recommendation text is: S(M,T) is a scoring form with a cost replay behind it, not a validated router. Use it to see what a router would pick and what it would cost. Do not switch live traffic on the strength of this repository alone.
+What we read from them:
 
-The shadow router that logs a pick beside every prompt without changing it runs inside our own systems today (19,182 logged decisions, 20 March to 4 November 2026). It is not yet packaged for release.
+1. Given room to answer, the recommendation is about as accurate as always using the best single model. It neither helps nor hurts by a margin visible at 200 tasks.
+2. The router has no idea of an answer budget. At a tight budget it recommends reasoning-heavy models that run out of tokens, and two cheaper fixed routes beat it.
+3. Among five low-cost models on four task sets, picking a route per task set bought 4 tasks in 200. Cost is where the routes differ: the most accurate route cost more than twenty times the cheapest for 16 more correct answers in 200.
+
+So the honest recommendation text is: S(M,T) is a scoring form with a cost replay behind it, not a validated router. Use it to see what a router would pick and what it would cost. Do not switch live traffic on the strength of this repository alone.
+
+The shadow router that logs a pick beside every prompt without changing it runs inside our own systems today (19,000 logged decisions since 20 March 2026). It is not yet packaged for release.
 
 ## Requirements
 
