@@ -24,7 +24,6 @@ import logging
 import sqlite3
 import time
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import torch
@@ -78,9 +77,7 @@ def load_source_filtered_data(
             (include_only_source,),
         ).fetchall()
     else:
-        rows = conn.execute(
-            "SELECT prompt_text, canonical_model_id, score FROM tier1_prompts"
-        ).fetchall()
+        rows = conn.execute("SELECT prompt_text, canonical_model_id, score FROM tier1_prompts").fetchall()
     conn.close()
 
     prompts, model_idxs, score_vals = [], [], []
@@ -148,7 +145,9 @@ def build_datasets_from_cache(
     # Note: the splits were created with a deterministic shuffle (seed=42).
     # We can reconstruct the full dataset, then re-filter.
     all_emb = torch.cat([cached["train_embeddings"], cached["val_embeddings"], cached["test_embeddings"]], dim=0)
-    all_mid = torch.cat([cached["train_model_indices"], cached["val_model_indices"], cached["test_model_indices"]], dim=0)
+    all_mid = torch.cat(
+        [cached["train_model_indices"], cached["val_model_indices"], cached["test_model_indices"]], dim=0
+    )
     all_scores = torch.cat([cached["train_scores"], cached["val_scores"], cached["test_scores"]], dim=0)
     n_total = all_emb.shape[0]
     log.info(f"Reconstructed full dataset: {n_total:,} samples")
@@ -180,9 +179,7 @@ def build_datasets_from_cache(
     # Now load the source labels for each row (in DB order)
     conn = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row
-    rows = conn.execute(
-        "SELECT prompt_text, canonical_model_id, score, source FROM tier1_prompts"
-    ).fetchall()
+    rows = conn.execute("SELECT prompt_text, canonical_model_id, score, source FROM tier1_prompts").fetchall()
     conn.close()
 
     # Build source labels aligned with the embedding data (same filtering as original)
@@ -193,9 +190,7 @@ def build_datasets_from_cache(
             continue
         source_labels.append(row["source"])
 
-    assert len(source_labels) == n_total, (
-        f"Source labels ({len(source_labels)}) != total samples ({n_total})"
-    )
+    assert len(source_labels) == n_total, f"Source labels ({len(source_labels)}) != total samples ({n_total})"
 
     # Filter by source
     if exclude_source:
@@ -221,9 +216,9 @@ def build_datasets_from_cache(
     n_val = int(n_filtered * val_ratio)
 
     splits = {
-        "train": indices[:n_filtered - n_test - n_val],
-        "val": indices[n_filtered - n_test - n_val:n_filtered - n_test],
-        "test": indices[n_filtered - n_test:],
+        "train": indices[: n_filtered - n_test - n_val],
+        "val": indices[n_filtered - n_test - n_val : n_filtered - n_test],
+        "test": indices[n_filtered - n_test :],
     }
 
     datasets = {}
@@ -252,7 +247,9 @@ def build_heldout_dataset(
     """
     cached = torch.load(str(cache_path), map_location="cpu", weights_only=False)
     all_emb = torch.cat([cached["train_embeddings"], cached["val_embeddings"], cached["test_embeddings"]], dim=0)
-    all_mid = torch.cat([cached["train_model_indices"], cached["val_model_indices"], cached["test_model_indices"]], dim=0)
+    all_mid = torch.cat(
+        [cached["train_model_indices"], cached["val_model_indices"], cached["test_model_indices"]], dim=0
+    )
     all_scores = torch.cat([cached["train_scores"], cached["val_scores"], cached["test_scores"]], dim=0)
     n_total = all_emb.shape[0]
 
@@ -270,9 +267,7 @@ def build_heldout_dataset(
     # Get source labels
     conn = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row
-    rows = conn.execute(
-        "SELECT canonical_model_id, source FROM tier1_prompts"
-    ).fetchall()
+    rows = conn.execute("SELECT canonical_model_id, source FROM tier1_prompts").fetchall()
     conn.close()
 
     source_labels = []
@@ -299,17 +294,26 @@ def train_ablation(
     engine = BilinearPhiEngine(num_models=num_models).to(device)
 
     train_loader = DataLoader(
-        datasets["train"], batch_size=config["batch_size"], shuffle=True, num_workers=0,
+        datasets["train"],
+        batch_size=config["batch_size"],
+        shuffle=True,
+        num_workers=0,
     )
     val_loader = DataLoader(
-        datasets["val"], batch_size=config["batch_size"], shuffle=False, num_workers=0,
+        datasets["val"],
+        batch_size=config["batch_size"],
+        shuffle=False,
+        num_workers=0,
     )
 
-    optimizer = torch.optim.AdamW([
-        {"params": [engine.phi_matrices], "lr": config["lr_phi"]},
-        {"params": [engine.model_embeddings.weight], "lr": config["lr_embed"]},
-        {"params": [engine.phi_biases, engine.phi_logits], "lr": config["lr_weights"]},
-    ], weight_decay=1e-4)
+    optimizer = torch.optim.AdamW(
+        [
+            {"params": [engine.phi_matrices], "lr": config["lr_phi"]},
+            {"params": [engine.model_embeddings.weight], "lr": config["lr_embed"]},
+            {"params": [engine.phi_biases, engine.phi_logits], "lr": config["lr_weights"]},
+        ],
+        weight_decay=1e-4,
+    )
 
     total_steps = len(train_loader) * config["epochs"]
     warmup = 500
@@ -380,7 +384,7 @@ def train_ablation(
                 val_batches += 1
         avg_val = val_loss / max(val_batches, 1)
 
-        log.info(f"  Epoch {epoch+1:>3d}/{config['epochs']}  train={avg_train:.4f}  val={avg_val:.4f}")
+        log.info(f"  Epoch {epoch + 1:>3d}/{config['epochs']}  train={avg_train:.4f}  val={avg_val:.4f}")
 
         if avg_val < best_val_loss:
             best_val_loss = avg_val
@@ -389,7 +393,7 @@ def train_ablation(
         else:
             patience_counter += 1
             if patience_counter >= config["patience"]:
-                log.info(f"  Early stopping at epoch {epoch+1}")
+                log.info(f"  Early stopping at epoch {epoch + 1}")
                 break
 
     # Restore best model
@@ -399,17 +403,23 @@ def train_ablation(
 
     # Save checkpoint
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({
-        "model_state": engine.state_dict(),
-        "num_models": num_models,
-        "d_prompt": engine.d_prompt,
-        "d_model": engine.d_model,
-        "n_phi": engine.n_phi,
-    }, checkpoint_path)
+    torch.save(
+        {
+            "model_state": engine.state_dict(),
+            "num_models": num_models,
+            "d_prompt": engine.d_prompt,
+            "d_model": engine.d_model,
+            "n_phi": engine.n_phi,
+        },
+        checkpoint_path,
+    )
 
     # Evaluate on test split
     test_loader = DataLoader(
-        datasets["test"], batch_size=config["batch_size"], shuffle=False, num_workers=0,
+        datasets["test"],
+        batch_size=config["batch_size"],
+        shuffle=False,
+        num_workers=0,
     )
     engine.eval()
     test_loss = 0.0
@@ -478,8 +488,7 @@ def eval_on_heldout(
 
 def main():
     parser = argparse.ArgumentParser(description="Leave-one-out source ablation")
-    parser.add_argument("--source", type=str, default=None,
-                        help="Run ablation for a single source only (default: all)")
+    parser.add_argument("--source", type=str, default=None, help="Run ablation for a single source only (default: all)")
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--patience", type=int, default=8)
@@ -518,28 +527,37 @@ def main():
     all_results = {}
 
     for source in sources_to_ablate:
-        log.info(f"\n{'='*60}")
+        log.info(f"\n{'=' * 60}")
         log.info(f"ABLATION: Excluding '{source}'")
-        log.info(f"{'='*60}\n")
+        log.info(f"{'=' * 60}\n")
 
         t0 = time.time()
 
         # Build training data (exclude this source)
         datasets = build_datasets_from_cache(
-            CACHE_PATH, DB_PATH, model_to_idx,
+            CACHE_PATH,
+            DB_PATH,
+            model_to_idx,
             exclude_source=source,
         )
 
         # Build held-out dataset (only this source)
         heldout = build_heldout_dataset(
-            CACHE_PATH, DB_PATH, model_to_idx, source=source,
+            CACHE_PATH,
+            DB_PATH,
+            model_to_idx,
+            source=source,
         )
         log.info(f"Held-out ({source}): {len(heldout):,} samples")
 
         # Train
         ckpt_path = RESULTS_DIR / f"ablation_no_{source}.pt"
         result = train_ablation(
-            datasets, registry.num_models, config, device, ckpt_path,
+            datasets,
+            registry.num_models,
+            config,
+            device,
+            ckpt_path,
         )
         engine = result.pop("engine")
         elapsed = time.time() - t0
@@ -551,19 +569,24 @@ def main():
         cross_source = {}
         for other_source in ALL_SOURCES:
             other_ds = build_heldout_dataset(
-                CACHE_PATH, DB_PATH, model_to_idx, source=other_source,
+                CACHE_PATH,
+                DB_PATH,
+                model_to_idx,
+                source=other_source,
             )
             cross_source[other_source] = eval_on_heldout(engine, other_ds, device)
 
-        result.update({
-            "excluded_source": source,
-            "train_samples": len(datasets["train"]),
-            "val_samples": len(datasets["val"]),
-            "test_samples": len(datasets["test"]),
-            "heldout_eval": heldout_metrics,
-            "cross_source_eval": cross_source,
-            "elapsed_sec": round(elapsed, 1),
-        })
+        result.update(
+            {
+                "excluded_source": source,
+                "train_samples": len(datasets["train"]),
+                "val_samples": len(datasets["val"]),
+                "test_samples": len(datasets["test"]),
+                "heldout_eval": heldout_metrics,
+                "cross_source_eval": cross_source,
+                "elapsed_sec": round(elapsed, 1),
+            }
+        )
 
         all_results[source] = result
         log.info(f"\nResults for excluding '{source}':")
@@ -571,18 +594,17 @@ def main():
         log.info(f"  Test Correlation: {result['test_correlation']:.4f}")
         log.info(f"  Held-out MSE ({source}): {heldout_metrics['mse']}")
         log.info(f"  Held-out Correlation ({source}): {heldout_metrics['correlation']}")
-        log.info(f"  Time: {elapsed/60:.1f} min")
+        log.info(f"  Time: {elapsed / 60:.1f} min")
 
         # Save incremental results
         results_path = RESULTS_DIR / "ablation_results.json"
         results_path.write_text(json.dumps(all_results, indent=2))
 
     # Print summary table
-    log.info(f"\n{'='*80}")
+    log.info(f"\n{'=' * 80}")
     log.info("LEAVE-ONE-OUT ABLATION SUMMARY")
-    log.info(f"{'='*80}")
-    log.info(f"{'Excluded':<15} {'Train N':>10} {'Val MSE':>10} {'Test MSE':>10} "
-             f"{'Heldout MSE':>12} {'Heldout r':>10}")
+    log.info(f"{'=' * 80}")
+    log.info(f"{'Excluded':<15} {'Train N':>10} {'Val MSE':>10} {'Test MSE':>10} {'Heldout MSE':>12} {'Heldout r':>10}")
     log.info("-" * 80)
     for source, r in all_results.items():
         ho = r["heldout_eval"]
@@ -592,9 +614,9 @@ def main():
             f"{ho['correlation'] or 'N/A':>10}"
         )
 
-    log.info(f"\n{'='*80}")
+    log.info(f"\n{'=' * 80}")
     log.info("CROSS-SOURCE GENERALIZATION MATRIX")
-    log.info(f"{'='*80}")
+    log.info(f"{'=' * 80}")
     header = "Excluded / Eval"
     log.info(f"{header:<15} " + " ".join(f"{s[:10]:>12}" for s in ALL_SOURCES))
     log.info("-" * 80)

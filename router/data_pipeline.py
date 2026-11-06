@@ -16,11 +16,9 @@ Usage:
 import argparse
 import json
 import logging
-import pickle
 import sqlite3
 import time
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 
@@ -39,7 +37,9 @@ BILINEAR_DIR = RAW_DIR / "bilinear"
 DB_PATH = DATA_DIR / "bilinear_training.db"
 
 # RouterBench lives in a sibling repo
-ROUTERBENCH_PKL = Path(__file__).parent.parent.parent.parent / "routerbench" / "data" / "hf_dataset" / "routerbench_raw.pkl"
+ROUTERBENCH_PKL = (
+    Path(__file__).parent.parent.parent.parent / "routerbench" / "data" / "hf_dataset" / "routerbench_raw.pkl"
+)
 
 
 def init_db(db_path: Path) -> sqlite3.Connection:
@@ -184,7 +184,9 @@ def ingest_routellm(conn: sqlite3.Connection, registry: ModelRegistry, dry_run: 
 
             # Mixtral gets its raw score normalized to 0-1
             mixtral_norm = mixtral_score / 5.0
-            rows_to_insert.append((prompt_text, mixtral_canonical, mixtral_norm, "general", source, f"{source_id}_mixtral"))
+            rows_to_insert.append(
+                (prompt_text, mixtral_canonical, mixtral_norm, "general", source, f"{source_id}_mixtral")
+            )
 
             # GPT-4 is the reference (always scores 1.0 in this dataset)
             rows_to_insert.append((prompt_text, gpt4_canonical, 1.0, "general", source, f"{source_id}_gpt4"))
@@ -481,11 +483,21 @@ def _log_unresolved(conn: sqlite3.Connection, unresolved: dict, source: str, dry
         conn.commit()
 
 
-def _log_pipeline(conn: sqlite3.Connection, source: str, tier: int, processed: int,
-                  inserted: int, skipped: int, elapsed: float, dry_run: bool):
+def _log_pipeline(
+    conn: sqlite3.Connection,
+    source: str,
+    tier: int,
+    processed: int,
+    inserted: int,
+    skipped: int,
+    elapsed: float,
+    dry_run: bool,
+):
     """Log pipeline execution."""
-    log.info(f"[{source}] T{tier}: {processed:,} processed, {inserted:,} inserted, "
-             f"{skipped:,} skipped (unresolved), {elapsed:.1f}s")
+    log.info(
+        f"[{source}] T{tier}: {processed:,} processed, {inserted:,} inserted, "
+        f"{skipped:,} skipped (unresolved), {elapsed:.1f}s"
+    )
     if not dry_run:
         conn.execute(
             "INSERT INTO pipeline_log (source, tier, rows_processed, rows_inserted, rows_skipped_unresolved, elapsed_sec) VALUES (?,?,?,?,?,?)",
@@ -537,7 +549,7 @@ def main():
     else:
         targets = INGEST_MAP
 
-    log.info(f"\n=== Bilinear Phi Data Pipeline ===")
+    log.info("\n=== Bilinear Phi Data Pipeline ===")
     log.info(f"Datasets: {list(targets.keys())}")
     log.info("")
 
@@ -564,14 +576,14 @@ def main():
         t1_sources = conn.execute("SELECT COUNT(DISTINCT source) FROM tier1_prompts").fetchone()[0]
         unresolved_count = conn.execute("SELECT COUNT(*) FROM unresolved_models").fetchone()[0]
 
-        log.info(f"\n=== Database Stats ===")
+        log.info("\n=== Database Stats ===")
         log.info(f"  Tier 1 rows: {t1_count:,}")
         log.info(f"  Tier 1 models: {t1_models}")
         log.info(f"  Tier 1 sources: {t1_sources}")
         log.info(f"  Unresolved model IDs: {unresolved_count}")
 
         # Per-model counts
-        log.info(f"\n=== Per-Model Row Counts ===")
+        log.info("\n=== Per-Model Row Counts ===")
         rows = conn.execute(
             "SELECT canonical_model_id, COUNT(*) as cnt FROM tier1_prompts GROUP BY canonical_model_id ORDER BY cnt DESC"
         ).fetchall()

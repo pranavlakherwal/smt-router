@@ -31,15 +31,15 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 logger = logging.getLogger(__name__)
 
 # Defaults from architecture plan
-D_PROMPT = 768   # all-mpnet-base-v2 output dim
-D_MODEL = 256    # model embedding dim
-N_PHI = 16       # number of phi heads
-NORM_CLIP = 10.0 # max L2 norm for model embeddings
+D_PROMPT = 768  # all-mpnet-base-v2 output dim
+D_MODEL = 256  # model embedding dim
+N_PHI = 16  # number of phi heads
+NORM_CLIP = 10.0  # max L2 norm for model embeddings
 
 
 class BilinearPhiEngine(nn.Module):
@@ -73,9 +73,7 @@ class BilinearPhiEngine(nn.Module):
 
         # Bilinear matrices: W_i of shape (d_prompt, d_model) for each phi head
         # Use a single 3D parameter for efficiency: (n_phi, d_prompt, d_model)
-        self.phi_matrices = nn.Parameter(
-            torch.randn(n_phi, d_prompt, d_model) * (2.0 / math.sqrt(d_prompt + d_model))
-        )
+        self.phi_matrices = nn.Parameter(torch.randn(n_phi, d_prompt, d_model) * (2.0 / math.sqrt(d_prompt + d_model)))
 
         # Biases: one per phi head
         self.phi_biases = nn.Parameter(torch.zeros(n_phi))
@@ -84,9 +82,7 @@ class BilinearPhiEngine(nn.Module):
         self.phi_logits = nn.Parameter(torch.zeros(n_phi))
 
         logger.info(
-            f"BilinearPhiEngine: {num_models} models, "
-            f"{n_phi} phi heads, "
-            f"{self._count_params():,} trainable params"
+            f"BilinearPhiEngine: {num_models} models, {n_phi} phi heads, {self._count_params():,} trainable params"
         )
 
     def _count_params(self) -> int:
@@ -288,9 +284,7 @@ def build_precomputed_datasets(
     # Load from SQLite
     conn = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row
-    rows = conn.execute(
-        "SELECT prompt_text, canonical_model_id, score FROM tier1_prompts"
-    ).fetchall()
+    rows = conn.execute("SELECT prompt_text, canonical_model_id, score FROM tier1_prompts").fetchall()
     conn.close()
 
     # Filter and collect
@@ -318,18 +312,22 @@ def build_precomputed_datasets(
     prompt_uid_per_row = [prompt_to_uid[p] for p in prompts]
     logger.info(
         f"Deduplication: {len(unique_prompts):,} unique prompts "
-        f"from {len(prompts):,} total ({len(unique_prompts)/len(prompts):.1%})"
+        f"from {len(prompts):,} total ({len(unique_prompts) / len(prompts):.1%})"
     )
 
     # Encode only unique prompts
     logger.info(f"Encoding {len(unique_prompts):,} unique prompts (batch_size={encode_batch_size})...")
     with torch.no_grad():
-        unique_embeddings = prompt_encoder.encode(
-            unique_prompts,
-            batch_size=encode_batch_size,
-            convert_to_tensor=True,
-            show_progress_bar=True,
-        ).cpu().clone()  # (N_unique, 768)
+        unique_embeddings = (
+            prompt_encoder.encode(
+                unique_prompts,
+                batch_size=encode_batch_size,
+                convert_to_tensor=True,
+                show_progress_bar=True,
+            )
+            .cpu()
+            .clone()
+        )  # (N_unique, 768)
     logger.info(f"Unique embeddings shape: {unique_embeddings.shape}")
 
     # Map back to full dataset
@@ -350,8 +348,8 @@ def build_precomputed_datasets(
 
     splits = {
         "train": indices[:n_train],
-        "val": indices[n_train:n_train + n_val],
-        "test": indices[n_train + n_val:],
+        "val": indices[n_train : n_train + n_val],
+        "test": indices[n_train + n_val :],
     }
 
     datasets = {}
@@ -429,6 +427,7 @@ class BilinearTrainer:
 
         # Load prompt encoder for embedding pre-computation
         from sentence_transformers import SentenceTransformer
+
         prompt_encoder = SentenceTransformer("all-mpnet-base-v2")
         prompt_encoder.eval()
 
@@ -454,18 +453,27 @@ class BilinearTrainer:
             return (b.to(device) for b in batch)
 
         train_loader = DataLoader(
-            datasets["train"], batch_size=cfg["batch_size"], shuffle=True, num_workers=0,
+            datasets["train"],
+            batch_size=cfg["batch_size"],
+            shuffle=True,
+            num_workers=0,
         )
         val_loader = DataLoader(
-            datasets["val"], batch_size=cfg["batch_size"], shuffle=False, num_workers=0,
+            datasets["val"],
+            batch_size=cfg["batch_size"],
+            shuffle=False,
+            num_workers=0,
         )
 
         # Per-component learning rates (anti-stuck safeguard #5)
-        optimizer = torch.optim.AdamW([
-            {"params": [self.engine.phi_matrices], "lr": cfg["lr_phi_matrices"]},
-            {"params": [self.engine.model_embeddings.weight], "lr": cfg["lr_model_embeddings"]},
-            {"params": [self.engine.phi_biases, self.engine.phi_logits], "lr": cfg["lr_weights"]},
-        ], weight_decay=cfg["weight_decay"])
+        optimizer = torch.optim.AdamW(
+            [
+                {"params": [self.engine.phi_matrices], "lr": cfg["lr_phi_matrices"]},
+                {"params": [self.engine.model_embeddings.weight], "lr": cfg["lr_model_embeddings"]},
+                {"params": [self.engine.phi_biases, self.engine.phi_logits], "lr": cfg["lr_weights"]},
+            ],
+            weight_decay=cfg["weight_decay"],
+        )
 
         # Cosine warmup scheduler
         total_steps = len(train_loader) * cfg["epochs"]
@@ -562,7 +570,7 @@ class BilinearTrainer:
             history["diversity_loss"].append(avg_diversity)
 
             logger.info(
-                f"Epoch {epoch+1:>3d}/{cfg['epochs']}  "
+                f"Epoch {epoch + 1:>3d}/{cfg['epochs']}  "
                 f"train_loss={avg_train_loss:.4f}  val_loss={val_loss:.4f}  "
                 f"diversity={avg_diversity:.4f}"
             )
@@ -576,7 +584,7 @@ class BilinearTrainer:
             else:
                 patience_counter += 1
                 if patience_counter >= cfg["patience"]:
-                    logger.info(f"Early stopping at epoch {epoch+1} (patience={cfg['patience']})")
+                    logger.info(f"Early stopping at epoch {epoch + 1} (patience={cfg['patience']})")
                     break
 
         # Load best model
@@ -584,7 +592,10 @@ class BilinearTrainer:
 
         # Final test evaluation
         test_loader = DataLoader(
-            datasets["test"], batch_size=cfg["batch_size"], shuffle=False, num_workers=0,
+            datasets["test"],
+            batch_size=cfg["batch_size"],
+            shuffle=False,
+            num_workers=0,
         )
         test_loss = self._validate(test_loader)
 
@@ -593,10 +604,10 @@ class BilinearTrainer:
         history["epochs_trained"] = epoch + 1
         history["total_steps"] = global_step
 
-        logger.info(f"\n=== Training Complete ===")
+        logger.info("\n=== Training Complete ===")
         logger.info(f"Best val loss: {best_val_loss:.4f}")
         logger.info(f"Test loss: {test_loss:.4f}")
-        logger.info(f"Epochs: {epoch+1}, Steps: {global_step}")
+        logger.info(f"Epochs: {epoch + 1}, Steps: {global_step}")
 
         return history
 
@@ -625,14 +636,17 @@ class BilinearTrainer:
         checkpoint_dir = self.db_path.parent / "checkpoints"
         checkpoint_dir.mkdir(exist_ok=True)
         path = checkpoint_dir / f"bilinear_phi_{tag}.pt"
-        torch.save({
-            "model_state": self.engine.state_dict(),
-            "num_models": self.engine.num_models,
-            "d_prompt": self.engine.d_prompt,
-            "d_model": self.engine.d_model,
-            "n_phi": self.engine.n_phi,
-            "model_to_idx": self.model_to_idx,
-        }, path)
+        torch.save(
+            {
+                "model_state": self.engine.state_dict(),
+                "num_models": self.engine.num_models,
+                "d_prompt": self.engine.d_prompt,
+                "d_model": self.engine.d_model,
+                "n_phi": self.engine.n_phi,
+                "model_to_idx": self.model_to_idx,
+            },
+            path,
+        )
         logger.debug(f"Checkpoint saved: {path}")
 
     def _load_checkpoint(self, tag: str):

@@ -74,7 +74,8 @@ class BilinearEvaluator:
         self.engine = self.engine.to(self.device).eval()
 
         # Load raw transformers encoder (much faster than sentence_transformers)
-        from transformers import AutoTokenizer, AutoModel
+        from transformers import AutoModel, AutoTokenizer
+
         log.info("Loading prompt encoder (all-mpnet-base-v2 via raw transformers)...")
         self.tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-mpnet-base-v2")
         self.encoder_model = AutoModel.from_pretrained("sentence-transformers/all-mpnet-base-v2")
@@ -89,17 +90,19 @@ class BilinearEvaluator:
     def _mean_pooling(model_output, attention_mask):
         token_embeddings = model_output[0]
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-        return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(
-            input_mask_expanded.sum(1), min=1e-9
-        )
+        return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
     def encode_prompts(self, prompts: list[str], batch_size: int = 64) -> torch.Tensor:
         """Encode prompts using raw transformers (faster than sentence_transformers)."""
         all_embeddings = []
         for i in range(0, len(prompts), batch_size):
-            batch = prompts[i:i + batch_size]
+            batch = prompts[i : i + batch_size]
             encoded = self.tokenizer(
-                batch, padding=True, truncation=True, max_length=128, return_tensors="pt",
+                batch,
+                padding=True,
+                truncation=True,
+                max_length=128,
+                return_tensors="pt",
             )
             encoded = {k: v.to(self.encode_device) for k, v in encoded.items()}
             with torch.no_grad():
@@ -109,7 +112,7 @@ class BilinearEvaluator:
                 all_embeddings.append(emb.cpu())
             if len(prompts) > 1000 and (i + batch_size) % 5000 < batch_size:
                 done = min(i + batch_size, len(prompts))
-                log.info(f"  Encoded {done:,}/{len(prompts):,} prompts ({done/len(prompts):.0%})")
+                log.info(f"  Encoded {done:,}/{len(prompts):,} prompts ({done / len(prompts):.0%})")
         return torch.cat(all_embeddings, dim=0)
 
     def score_models(
@@ -183,10 +186,16 @@ class BilinearEvaluator:
         log.info("=" * 60)
 
         rb_models = [
-            "gpt-3.5-turbo-1106", "gpt-4-1106-preview", "claude-instant-v1",
-            "claude-v1", "claude-v2", "meta/llama-2-70b-chat",
-            "mistralai/mixtral-8x7b-chat", "mistralai/mistral-7b-chat",
-            "zero-one-ai/Yi-34B-Chat", "WizardLM/WizardLM-13B-V1.2",
+            "gpt-3.5-turbo-1106",
+            "gpt-4-1106-preview",
+            "claude-instant-v1",
+            "claude-v1",
+            "claude-v2",
+            "meta/llama-2-70b-chat",
+            "mistralai/mixtral-8x7b-chat",
+            "mistralai/mistral-7b-chat",
+            "zero-one-ai/Yi-34B-Chat",
+            "WizardLM/WizardLM-13B-V1.2",
             "meta/code-llama-instruct-34b-chat",
         ]
 
@@ -287,7 +296,7 @@ class BilinearEvaluator:
             log.info(f"  Diversity: {n_unique_picks} unique models picked")
             for mid, cnt in sorted(per_model_picks.items(), key=lambda x: -x[1])[:5]:
                 mid_acc = per_model_correct[mid] / max(cnt, 1) * 100
-                log.info(f"    {mid}: {cnt} picks ({cnt/max(n,1)*100:.1f}%), acc={mid_acc:.1f}%")
+                log.info(f"    {mid}: {cnt} picks ({cnt / max(n, 1) * 100:.1f}%), acc={mid_acc:.1f}%")
 
             results["splits"][split_name] = {
                 "accuracy": round(acc, 2),
@@ -460,10 +469,7 @@ class BilinearEvaluator:
         for pct in [20, 50, 80]:
             n_strong = int(len(all_prompts) * pct / 100)
             strong_set = set(sorted_indices[:n_strong])
-            quality_at_pct = np.mean([
-                strong_gt[i] if i in strong_set else weak_gt[i]
-                for i in range(len(all_prompts))
-            ])
+            quality_at_pct = np.mean([strong_gt[i] if i in strong_set else weak_gt[i] for i in range(len(all_prompts))])
             quality_ratio = quality_at_pct / max(always_strong_quality, 1e-8) * 100
             thresholds[f"{pct}pct_strong"] = {
                 "quality": round(float(quality_at_pct), 4),
@@ -478,10 +484,7 @@ class BilinearEvaluator:
             pct = step / n_points
             n_strong = int(len(all_prompts) * pct)
             strong_set = set(sorted_indices[:n_strong])
-            q = np.mean([
-                strong_gt[i] if i in strong_set else weak_gt[i]
-                for i in range(len(all_prompts))
-            ])
+            q = np.mean([strong_gt[i] if i in strong_set else weak_gt[i] for i in range(len(all_prompts))])
             auc_sum += q
         auc = auc_sum / (n_points + 1)
 
@@ -503,13 +506,15 @@ class BilinearEvaluator:
         source_set = set(all_sources)
         for src in sorted(source_set):
             mask = np.array([s == src for s in all_sources])
-            src_correct = ((route_to_strong[mask] == strong_is_better[mask]) | (strong_gt[mask] == weak_gt[mask])).mean()
+            src_correct = (
+                (route_to_strong[mask] == strong_is_better[mask]) | (strong_gt[mask] == weak_gt[mask])
+            ).mean()
             results["per_source"][src] = {
                 "n": int(mask.sum()),
                 "routing_accuracy": round(float(src_correct * 100), 2),
             }
 
-        log.info(f"\nRouteLLM Overall:")
+        log.info("\nRouteLLM Overall:")
         log.info(f"  Routing accuracy: {routing_acc:.2f}%")
         log.info(f"  Routes to strong: {pct_strong:.1f}%")
         log.info(f"  Quality: {quality:.4f} (oracle: {oracle_quality:.4f})")
@@ -613,7 +618,11 @@ class BilinearEvaluator:
                             row_scores = {}
                             for j, mid in enumerate(eval_models):
                                 if j < len(eval_indices):
-                                    row_scores[mid] = float(scores_mat[i, eval_indices[j]] if isinstance(eval_indices, list) and j < n_models else scores_mat[i, j])
+                                    row_scores[mid] = float(
+                                        scores_mat[i, eval_indices[j]]
+                                        if isinstance(eval_indices, list) and j < n_models
+                                        else scores_mat[i, j]
+                                    )
 
                             # Router pick
                             picked = self.pick_best(generic_emb, scorable)
@@ -669,7 +678,7 @@ class BilinearEvaluator:
             "improvement_vs_v4": round(float(overall_mu - V4_BASELINES["routereval_mu"]), 4),
         }
 
-        log.info(f"\nRouterEval Overall:")
+        log.info("\nRouterEval Overall:")
         log.info(f"  mu={overall_mu:.4f} (v4 baseline: {V4_BASELINES['routereval_mu']})")
         log.info(f"  Accuracy: {overall_acc:.2f}%")
         log.info(f"  Vr (variance reduction): {vr:.4f}")
@@ -707,8 +716,8 @@ class BilinearEvaluator:
         all_preds = []
         batch_size = 512
         for i in range(0, n, batch_size):
-            emb = test_emb[i:i+batch_size].to(self.device)
-            idx = test_idx[i:i+batch_size].to(self.device)
+            emb = test_emb[i : i + batch_size].to(self.device)
+            idx = test_idx[i : i + batch_size].to(self.device)
             with torch.no_grad():
                 preds = self.engine.predict_score(emb, idx)
             all_preds.append(preds.cpu())
@@ -760,7 +769,9 @@ def main():
     parser = argparse.ArgumentParser(description="Evaluate BilinearPhiEngine")
     parser.add_argument("--checkpoint", type=str, default=str(DEFAULT_CHECKPOINT))
     parser.add_argument(
-        "--benchmark", type=str, default="all",
+        "--benchmark",
+        type=str,
+        default="all",
         choices=["all", "routerbench", "routellm", "routereval", "internal"],
     )
     parser.add_argument("--output", type=str, default=str(DATA_DIR / "eval_results.json"))
@@ -814,15 +825,21 @@ def main():
 
     if "internal" in results:
         r = results["internal"]
-        log.info(f"Internal Test:  MSE={r['mse']:.6f}  r={r['correlation']:.4f}  binary_acc={r['binary_accuracy']:.1f}%")
+        log.info(
+            f"Internal Test:  MSE={r['mse']:.6f}  r={r['correlation']:.4f}  binary_acc={r['binary_accuracy']:.1f}%"
+        )
 
     if "routerbench" in results:
         r = results["routerbench"]
-        log.info(f"RouterBench:    acc={r['overall_accuracy']:.2f}%  (v4: {r['v4_baseline']}%, delta: {r['improvement_vs_v4']:+.2f}%)")
+        log.info(
+            f"RouterBench:    acc={r['overall_accuracy']:.2f}%  (v4: {r['v4_baseline']}%, delta: {r['improvement_vs_v4']:+.2f}%)"
+        )
 
     if "routellm" in results:
         r = results["routellm"]
-        log.info(f"RouteLLM:       routing_acc={r['routing_accuracy']:.2f}%  quality={r['quality']:.4f}  AUC={r['auc']:.4f}")
+        log.info(
+            f"RouteLLM:       routing_acc={r['routing_accuracy']:.2f}%  quality={r['quality']:.4f}  AUC={r['auc']:.4f}"
+        )
 
     if "routereval" in results:
         r = results["routereval"]

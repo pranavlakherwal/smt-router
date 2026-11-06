@@ -1,0 +1,13 @@
+line-length = 120
+target-version = "py39"
+[lint]
+select = ["E", "F", "W", "I", "B"]
+ignore = ["E501"]
+[format]
+quote-style = "double"
+
+[lint.per-file-ignores]
+# The paper's training and evaluation scripts are kept as published. These are unused names, not bugs.
+"router/data_pipeline.py" = ["F841"]
+"router/eval_bilinear.py" = ["B007"]
+"router/leave_one_out.py" = ["F841"]

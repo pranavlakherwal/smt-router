@@ -16,14 +16,18 @@ Where:
 - H(pi): policy entropy over endpoint selection distribution
 """
 
-import math
 import logging
-from typing import Dict, List, Optional
+import math
+from typing import Dict, List
 
+from router.config import load_learned_weights, load_seed_weights
 from router.models import (
-    Task, Endpoint, ScoredEndpoint, GateResult, PhiScore,
+    Endpoint,
+    GateResult,
+    PhiScore,
+    ScoredEndpoint,
+    Task,
 )
-from router.config import load_seed_weights, load_learned_weights
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +143,7 @@ class SMTScorer:
                 policy_entropy -= p * math.log(p)
 
         # Apply entropy bonus to each endpoint
-        for i, se in enumerate(passed):
+        for se in passed:
             # Per-endpoint entropy contribution: proportional to how much
             # selecting this endpoint contributes to policy diversity
             # Uniform would give max entropy, so bonus rewards diversity
@@ -156,7 +160,9 @@ class SMTScorer:
         beta(t) = c * log(1 + t) with task-conditional multiplier.
         """
         t = self._decision_count
-        base_beta = self._beta_c * math.log(1 + t) if t > 0 else self._seed_config.get("beta", {}).get("initial_beta", 0.1)
+        base_beta = (
+            self._beta_c * math.log(1 + t) if t > 0 else self._seed_config.get("beta", {}).get("initial_beta", 0.1)
+        )
         task_multiplier = self._beta_task.get(task.task_type.value, 0.5)
         return base_beta * task_multiplier
 
@@ -166,7 +172,7 @@ class SMTScorer:
         Decays exponentially: lambda(n) = max(lambda_min, lambda_0 * decay^n)
         """
         n = self._decision_count
-        current = self._lambda_initial * (self._lambda_decay ** n)
+        current = self._lambda_initial * (self._lambda_decay**n)
         return max(current, self._lambda_min)
 
     def update_decision_count(self, n: int):

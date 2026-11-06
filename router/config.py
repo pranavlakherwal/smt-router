@@ -7,7 +7,7 @@ endpoints (LLMs, agents, scripts, MCP tools) the router can select from.
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 from router.models import Endpoint, EndpointType, TaskType
 
@@ -226,6 +226,7 @@ MODEL_ALIASES: Dict[str, str] = {
 # ---------------------------------------------------------------------------
 # Weight loading
 # ---------------------------------------------------------------------------
+
 
 def load_seed_weights() -> Dict[str, Any]:
     """Load seed weights from data/seed_weights.json."""

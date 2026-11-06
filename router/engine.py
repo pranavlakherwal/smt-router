@@ -13,18 +13,18 @@ Usage:
 import json
 import logging
 import uuid
-from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
-from router.models import (
-    Task, Endpoint, ScoredEndpoint, RoutingDecision,
-    FeedbackSignal, TaskType,
-)
 from router.config import PIPELINE
-from router.registry import EndpointRegistry
 from router.gates import GateEvaluator
+from router.models import (
+    FeedbackSignal,
+    RoutingDecision,
+    Task,
+)
 from router.phi_evaluators import PhiEvaluatorEngine
+from router.registry import EndpointRegistry
 from router.scorer import SMTScorer
 from router.weight_learner import WeightLearner
 
@@ -67,8 +67,7 @@ class RoutingEngine:
             return RoutingDecision(task=task)
 
         logger.info(
-            f"Routing task '{task.query[:50]}...' "
-            f"(type={task.task_type.value}) across {len(endpoints)} endpoints"
+            f"Routing task '{task.query[:50]}...' (type={task.task_type.value}) across {len(endpoints)} endpoints"
         )
 
         # Step 1-3: Gate + Phi evaluation for each endpoint
@@ -93,7 +92,7 @@ class RoutingEngine:
 
         # Step 5: Select top-k
         passing = [se for se in scored_endpoints if se.gates_passed]
-        top_k = passing[:self.top_k]
+        top_k = passing[: self.top_k]
         selected = top_k[0] if top_k else None
 
         # Build decision
@@ -115,10 +114,7 @@ class RoutingEngine:
                 f"type={selected.endpoint.endpoint_type.value})"
             )
             if len(top_k) > 1:
-                runners_up = ", ".join(
-                    f"{se.endpoint.name}={se.final_score:.4f}"
-                    for se in top_k[1:]
-                )
+                runners_up = ", ".join(f"{se.endpoint.name}={se.final_score:.4f}" for se in top_k[1:])
                 logger.info(f"Runners-up: {runners_up}")
         else:
             logger.warning("No endpoint passed all gates")
@@ -144,10 +140,7 @@ class RoutingEngine:
         self.scorer.weights = new_weights
         self.scorer.update_decision_count(self.learner.decision_count)
 
-        logger.info(
-            f"Feedback processed: quality={signal.quality_score:.2f}, "
-            f"decisions={self.learner.decision_count}"
-        )
+        logger.info(f"Feedback processed: quality={signal.quality_score:.2f}, decisions={self.learner.decision_count}")
 
     def explain(self, decision: RoutingDecision) -> str:
         """Generate human-readable explanation of a routing decision."""
@@ -177,10 +170,7 @@ class RoutingEngine:
             for ps in sorted_phis[:5]:
                 w = self.scorer.weights.get(ps.phi_id, 0)
                 contribution = w * ps.score
-                lines.append(
-                    f"    {ps.name}: {ps.score:.3f} * w={w:.4f} = {contribution:.4f} "
-                    f"[{ps.source}]"
-                )
+                lines.append(f"    {ps.name}: {ps.score:.3f} * w={w:.4f} = {contribution:.4f} [{ps.source}]")
         else:
             lines.append("No endpoint selected (all gates failed)")
 
@@ -189,10 +179,7 @@ class RoutingEngine:
             lines.append("")
             lines.append("Alternatives:")
             for se in decision.top_k[1:]:
-                lines.append(
-                    f"  {se.endpoint.name}: {se.final_score:.4f} "
-                    f"({se.endpoint.endpoint_type.value})"
-                )
+                lines.append(f"  {se.endpoint.name}: {se.final_score:.4f} ({se.endpoint.endpoint_type.value})")
 
         # Gate failures
         failed = [se for se in decision.scored_endpoints if not se.gates_passed]
@@ -213,9 +200,7 @@ class RoutingEngine:
             "by_type": self.registry.count_by_type(),
             "decisions": self.learner.decision_count,
             "convergence": self.learner.get_convergence_stats(),
-            "weights": {
-                k: round(v, 4) for k, v in self.scorer.weights.items()
-            },
+            "weights": {k: round(v, 4) for k, v in self.scorer.weights.items()},
         }
 
     def close(self):
@@ -236,14 +221,9 @@ class RoutingEngine:
                 "query_preview": decision.task.query[:100],
                 "selected": decision.selected.endpoint.id if decision.selected else None,
                 "selected_score": decision.selected.final_score if decision.selected else 0,
-                "top_k": [
-                    {"id": se.endpoint.id, "score": se.final_score}
-                    for se in decision.top_k
-                ],
+                "top_k": [{"id": se.endpoint.id, "score": se.final_score} for se in decision.top_k],
                 "total_evaluated": len(decision.scored_endpoints),
-                "gates_failed": sum(
-                    1 for se in decision.scored_endpoints if not se.gates_passed
-                ),
+                "gates_failed": sum(1 for se in decision.scored_endpoints if not se.gates_passed),
                 "decision_number": decision.decision_number,
             }
 

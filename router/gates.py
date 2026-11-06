@@ -14,7 +14,7 @@ Five gates:
 import logging
 from typing import List
 
-from router.models import Task, Endpoint, GateResult
+from router.models import Endpoint, GateResult, Task
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +45,8 @@ class GateEvaluator:
             return GateResult(gate_name="context_window", passed=True)
 
         passed = endpoint.context_window >= task.context_length
-        reason = "" if passed else (
-            f"Need {task.context_length:,} tokens, "
-            f"endpoint supports {endpoint.context_window:,}"
+        reason = (
+            "" if passed else (f"Need {task.context_length:,} tokens, endpoint supports {endpoint.context_window:,}")
         )
         return GateResult(gate_name="context_window", passed=passed, reason=reason)
 
@@ -76,14 +75,11 @@ class GateEvaluator:
         input_tokens = max(task.context_length, 1000)
         output_tokens = 500
         estimated_cost = (
-            input_tokens * endpoint.cost_per_million_input
-            + output_tokens * endpoint.cost_per_million_output
+            input_tokens * endpoint.cost_per_million_input + output_tokens * endpoint.cost_per_million_output
         ) / 1_000_000
 
         passed = estimated_cost <= task.max_budget_usd
-        reason = "" if passed else (
-            f"Estimated ${estimated_cost:.4f} exceeds budget ${task.max_budget_usd:.4f}"
-        )
+        reason = "" if passed else (f"Estimated ${estimated_cost:.4f} exceeds budget ${task.max_budget_usd:.4f}")
         return GateResult(gate_name="budget", passed=passed, reason=reason)
 
     def _gate_thinking_support(self, task: Task, endpoint: Endpoint) -> GateResult:

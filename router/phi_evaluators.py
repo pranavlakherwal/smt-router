@@ -12,8 +12,8 @@ import sqlite3
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from router.models import Task, Endpoint, PhiScore, EndpointType
 from router.config import NORMALIZED_DB_PATH
+from router.models import Endpoint, EndpointType, PhiScore, Task
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +55,8 @@ DEFAULT_PRIORS = {
     "phi_7": 0.5,  # uncertainty: 0.5 = maximum entropy (unknown)
     "phi_8": 0.5,
     "phi_9": 1.0,  # availability: assume available
-    "phi_10": 0.3, # cross-node: conservative
-    "phi_11": 0.5, # calibration: unknown
+    "phi_10": 0.3,  # cross-node: conservative
+    "phi_11": 0.5,  # calibration: unknown
     "phi_12": 0.5,
     "phi_13": 0.5,
     "phi_14": 0.5,
@@ -68,7 +68,12 @@ DEFAULT_PRIORS = {
 # Each key can map to multiple candidate IDs (tried in order).
 MODEL_ID_ALIASES: Dict[str, List[str]] = {
     # RouterBench models
-    "mistralai/mixtral-8x7b-chat": ["mixtral-8x7b", "Mixtral 8x7B", "Mixtral-8x7B-Instruct-v0.1", "mistralai/mixtral-8x7b-instruct"],
+    "mistralai/mixtral-8x7b-chat": [
+        "mixtral-8x7b",
+        "Mixtral 8x7B",
+        "Mixtral-8x7B-Instruct-v0.1",
+        "mistralai/mixtral-8x7b-instruct",
+    ],
     "mixtral-8x7b-chat": ["mixtral-8x7b", "Mixtral 8x7B", "Mixtral-8x7B-Instruct-v0.1"],
     "meta/llama-2-70b-chat": ["llama-2-70b-chat-hf", "Llama 2-70B", "meta-llama/llama-3.3-70b-instruct"],
     "llama-2-70b-chat": ["llama-2-70b-chat-hf", "Llama 2-70B"],
@@ -83,7 +88,12 @@ MODEL_ID_ALIASES: Dict[str, List[str]] = {
     "code-llama-instruct-34b-chat": ["Code Llama-34B", "codellama-34b"],
     # RouteLLM models (strong=gpt-4, weak=mixtral)
     "gpt-4": ["gpt-4", "gpt-4-0613", "gpt4", "gpt4_0613", "GPT-4 (Jun 2023)"],
-    "mistralai/Mixtral-8x7B-Instruct-v0.1": ["mixtral-8x7b", "Mixtral 8x7B", "Mixtral-8x7B-Instruct-v0.1", "mistralai/mixtral-8x7b-instruct"],
+    "mistralai/Mixtral-8x7B-Instruct-v0.1": [
+        "mixtral-8x7b",
+        "Mixtral 8x7B",
+        "Mixtral-8x7B-Instruct-v0.1",
+        "mistralai/mixtral-8x7b-instruct",
+    ],
     "Mixtral-8x7B-Instruct-v0.1": ["mixtral-8x7b", "Mixtral 8x7B", "mistralai/mixtral-8x7b-instruct"],
     "mixtral-8x7b-instruct-v0.1": ["mixtral-8x7b", "Mixtral 8x7B", "mistralai/mixtral-8x7b-instruct"],
     # GPT-4 variants (alpaca_eval uses underscore format)
@@ -153,16 +163,21 @@ class PhiEvaluatorEngine:
             score = 1.0  # non-LLM endpoints or no context requirement
 
         return PhiScore(
-            phi_id="phi_1", name="constraint_filter",
-            score=score, confidence=0.9, source="computed",
+            phi_id="phi_1",
+            name="constraint_filter",
+            score=score,
+            confidence=0.9,
+            source="computed",
         )
 
     def _eval_phi_2(self, task: Task, endpoint: Endpoint) -> PhiScore:
         """domain_classifier: Task-domain classification strength."""
         score = self._query_model_phi_score(endpoint, "phi_2", task)
         return PhiScore(
-            phi_id="phi_2", name="domain_classifier",
-            score=score["score"], confidence=score["confidence"],
+            phi_id="phi_2",
+            name="domain_classifier",
+            score=score["score"],
+            confidence=score["confidence"],
             source=score["source"],
         )
 
@@ -175,8 +190,10 @@ class PhiEvaluatorEngine:
         blended = db_score["score"] * (0.5 + 0.5 * complexity_weight)
 
         return PhiScore(
-            phi_id="phi_3", name="complexity_estimator",
-            score=min(blended, 1.0), confidence=db_score["confidence"],
+            phi_id="phi_3",
+            name="complexity_estimator",
+            score=min(blended, 1.0),
+            confidence=db_score["confidence"],
             source=db_score["source"],
         )
 
@@ -184,16 +201,20 @@ class PhiEvaluatorEngine:
         """performance_predictor: Expected quality per model per task type."""
         score = self._query_model_phi_score(endpoint, "phi_4", task)
         return PhiScore(
-            phi_id="phi_4", name="performance_predictor",
-            score=score["score"], confidence=score["confidence"],
+            phi_id="phi_4",
+            name="performance_predictor",
+            score=score["score"],
+            confidence=score["confidence"],
             source=score["source"],
         )
 
     def _eval_phi_5(self, task: Task, endpoint: Endpoint) -> PhiScore:
         """context_fitness: Content relevance (limited data, return prior)."""
         return PhiScore(
-            phi_id="phi_5", name="context_fitness",
-            score=DEFAULT_PRIORS["phi_5"], confidence=0.1,
+            phi_id="phi_5",
+            name="context_fitness",
+            score=DEFAULT_PRIORS["phi_5"],
+            confidence=0.1,
             source="prior",
         )
 
@@ -201,8 +222,10 @@ class PhiEvaluatorEngine:
         """historical_success: Past success rate on similar tasks."""
         score = self._query_model_phi_score(endpoint, "phi_6", task)
         return PhiScore(
-            phi_id="phi_6", name="historical_success",
-            score=score["score"], confidence=score["confidence"],
+            phi_id="phi_6",
+            name="historical_success",
+            score=score["score"],
+            confidence=score["confidence"],
             source=score["source"],
         )
 
@@ -216,8 +239,10 @@ class PhiEvaluatorEngine:
         score = 1.0 - uncertainty
 
         return PhiScore(
-            phi_id="phi_7", name="uncertainty_score",
-            score=score, confidence=0.5,
+            phi_id="phi_7",
+            name="uncertainty_score",
+            score=score,
+            confidence=0.5,
             source="derived",
         )
 
@@ -225,8 +250,10 @@ class PhiEvaluatorEngine:
         """cascade_position: Where model sits in cost-quality cascade."""
         score = self._query_model_phi_score(endpoint, "phi_8", task)
         return PhiScore(
-            phi_id="phi_8", name="cascade_position",
-            score=score["score"], confidence=score["confidence"],
+            phi_id="phi_8",
+            name="cascade_position",
+            score=score["score"],
+            confidence=score["confidence"],
             source=score["source"],
         )
 
@@ -234,8 +261,11 @@ class PhiEvaluatorEngine:
         """load_availability: Current availability (runtime metric)."""
         score = 1.0 if endpoint.available else 0.0
         return PhiScore(
-            phi_id="phi_9", name="load_availability",
-            score=score, confidence=1.0, source="runtime",
+            phi_id="phi_9",
+            name="load_availability",
+            score=score,
+            confidence=1.0,
+            source="runtime",
         )
 
     def _eval_phi_10(self, task: Task, endpoint: Endpoint) -> PhiScore:
@@ -247,15 +277,20 @@ class PhiEvaluatorEngine:
             score = DEFAULT_PRIORS["phi_10"]
 
         return PhiScore(
-            phi_id="phi_10", name="cross_node_capability",
-            score=score, confidence=0.2, source="prior",
+            phi_id="phi_10",
+            name="cross_node_capability",
+            score=score,
+            confidence=0.2,
+            source="prior",
         )
 
     def _eval_phi_11(self, task: Task, endpoint: Endpoint) -> PhiScore:
         """calibration_quality: Model's self-knowledge (ECE-like)."""
         return PhiScore(
-            phi_id="phi_11", name="calibration_quality",
-            score=DEFAULT_PRIORS["phi_11"], confidence=0.1,
+            phi_id="phi_11",
+            name="calibration_quality",
+            score=DEFAULT_PRIORS["phi_11"],
+            confidence=0.1,
             source="prior",
         )
 
@@ -269,8 +304,11 @@ class PhiEvaluatorEngine:
             score = 0.7  # no requirement, neutral-positive
 
         return PhiScore(
-            phi_id="phi_12", name="output_structure_compliance",
-            score=score, confidence=0.4, source="computed",
+            phi_id="phi_12",
+            name="output_structure_compliance",
+            score=score,
+            confidence=0.4,
+            source="computed",
         )
 
     def _eval_phi_13(self, task: Task, endpoint: Endpoint) -> PhiScore:
@@ -283,8 +321,10 @@ class PhiEvaluatorEngine:
             boosted = score["score"]
 
         return PhiScore(
-            phi_id="phi_13", name="reasoning_depth",
-            score=boosted, confidence=score["confidence"],
+            phi_id="phi_13",
+            name="reasoning_depth",
+            score=boosted,
+            confidence=score["confidence"],
             source=score["source"],
         )
 
@@ -293,8 +333,11 @@ class PhiEvaluatorEngine:
         if endpoint.endpoint_type != EndpointType.LLM:
             # Non-LLM endpoints have no direct per-token cost
             return PhiScore(
-                phi_id="phi_14", name="cost_efficiency_ratio",
-                score=0.8, confidence=0.3, source="computed",
+                phi_id="phi_14",
+                name="cost_efficiency_ratio",
+                score=0.8,
+                confidence=0.3,
+                source="computed",
             )
 
         # Lower cost = higher efficiency score
@@ -311,16 +354,22 @@ class PhiEvaluatorEngine:
             score = 0.2
 
         return PhiScore(
-            phi_id="phi_14", name="cost_efficiency_ratio",
-            score=score, confidence=0.8, source="computed",
+            phi_id="phi_14",
+            name="cost_efficiency_ratio",
+            score=score,
+            confidence=0.8,
+            source="computed",
         )
 
     def _eval_phi_15(self, task: Task, endpoint: Endpoint) -> PhiScore:
         """context_window_utilization: Performance degradation with length."""
         if task.context_length <= 0 or endpoint.context_window <= 0:
             return PhiScore(
-                phi_id="phi_15", name="context_window_utilization",
-                score=0.8, confidence=0.3, source="computed",
+                phi_id="phi_15",
+                name="context_window_utilization",
+                score=0.8,
+                confidence=0.3,
+                source="computed",
             )
 
         utilization = task.context_length / endpoint.context_window
@@ -337,16 +386,21 @@ class PhiEvaluatorEngine:
             score = 0.3
 
         return PhiScore(
-            phi_id="phi_15", name="context_window_utilization",
-            score=score, confidence=0.5, source="computed",
+            phi_id="phi_15",
+            name="context_window_utilization",
+            score=score,
+            confidence=0.5,
+            source="computed",
         )
 
     def _eval_phi_16(self, task: Task, endpoint: Endpoint) -> PhiScore:
         """instruction_adherence: How well the model follows instructions."""
         score = self._query_model_phi_score(endpoint, "phi_16", task)
         return PhiScore(
-            phi_id="phi_16", name="instruction_adherence",
-            score=score["score"], confidence=score["confidence"],
+            phi_id="phi_16",
+            name="instruction_adherence",
+            score=score["score"],
+            confidence=score["confidence"],
             source=score["source"],
         )
 
@@ -354,9 +408,7 @@ class PhiEvaluatorEngine:
     # DB query helper
     # ------------------------------------------------------------------
 
-    def _query_model_phi_score(
-        self, endpoint: Endpoint, phi_id: str, task: Task
-    ) -> Dict:
+    def _query_model_phi_score(self, endpoint: Endpoint, phi_id: str, task: Task) -> Dict:
         """Query normalized_scores DB for a model's average score on a phi function.
 
         Returns dict with score (0-1), confidence (0-1), and source string.

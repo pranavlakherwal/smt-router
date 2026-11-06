@@ -8,15 +8,11 @@ provides lookup by ID or alias.
 import logging
 from typing import Dict, List, Optional
 
-from router.models import Endpoint, EndpointType
 from router.config import (
     ALL_ENDPOINTS,
     MODEL_ALIASES,
-    LLM_ENDPOINTS,
-    AGENT_ENDPOINTS,
-    SCRIPT_ENDPOINTS,
-    MCP_ENDPOINTS,
 )
+from router.models import Endpoint, EndpointType
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +27,7 @@ class EndpointRegistry:
         if load_defaults:
             for ep in ALL_ENDPOINTS:
                 self.register(ep)
-            logger.info(
-                f"Registry loaded: {len(self._endpoints)} endpoints "
-                f"({self.count_by_type()})"
-            )
+            logger.info(f"Registry loaded: {len(self._endpoints)} endpoints ({self.count_by_type()})")
 
     def register(self, endpoint: Endpoint):
         """Register an endpoint."""
@@ -64,10 +57,7 @@ class EndpointRegistry:
 
     def get_by_type(self, endpoint_type: EndpointType) -> List[Endpoint]:
         """Get endpoints of a specific type."""
-        return [
-            ep for ep in self._endpoints.values()
-            if ep.endpoint_type == endpoint_type
-        ]
+        return [ep for ep in self._endpoints.values() if ep.endpoint_type == endpoint_type]
 
     def get_available(self) -> List[Endpoint]:
         """Get all available endpoints."""

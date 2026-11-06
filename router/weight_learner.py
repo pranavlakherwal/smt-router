@@ -12,14 +12,14 @@ Convergence guaranteed by Hajek conditions (logarithmic cooling).
 From regret_bounds proof: ~10,000 decisions to reach 95% optimal.
 """
 
-import json
 import logging
 from typing import Dict, List, Optional
 
+from router.config import load_learned_weights, save_learned_weights
 from router.models import (
-    FeedbackSignal, ScoredEndpoint, PhiScore, TaskType,
+    FeedbackSignal,
+    ScoredEndpoint,
 )
-from router.config import save_learned_weights, load_learned_weights
 
 logger = logging.getLogger(__name__)
 
@@ -85,21 +85,20 @@ class WeightLearner:
         self._weights = self._project_simplex(new_weights)
 
         # Log the update
-        logger.info(
-            f"Weight update n={n}: step={step_size:.4f}, "
-            f"error={error:.4f}, endpoint={feedback.endpoint_id}"
-        )
+        logger.info(f"Weight update n={n}: step={step_size:.4f}, error={error:.4f}, endpoint={feedback.endpoint_id}")
 
         # Track history
-        self._feedback_history.append({
-            "n": n,
-            "endpoint_id": feedback.endpoint_id,
-            "task_type": feedback.task_type.value,
-            "predicted": round(predicted, 4),
-            "observed": round(observed, 4),
-            "error": round(error, 4),
-            "step_size": round(step_size, 4),
-        })
+        self._feedback_history.append(
+            {
+                "n": n,
+                "endpoint_id": feedback.endpoint_id,
+                "task_type": feedback.task_type.value,
+                "predicted": round(predicted, 4),
+                "observed": round(observed, 4),
+                "error": round(error, 4),
+                "step_size": round(step_size, 4),
+            }
+        )
 
         # Persist every 10 updates
         if n % 10 == 0:

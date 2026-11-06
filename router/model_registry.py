@@ -68,8 +68,10 @@ class ModelRegistry:
                 else:
                     self._alias_to_canonical[norm_alias] = canonical_id
 
-        logger.info(f"Built alias index: {len(self._alias_to_canonical)} aliases -> "
-                     f"{len(self._data['models'])} canonical models")
+        logger.info(
+            f"Built alias index: {len(self._alias_to_canonical)} aliases -> "
+            f"{len(self._data['models'])} canonical models"
+        )
 
     def _build_embedding_index(self):
         """Build stable canonical_id -> integer index for embedding lookup.

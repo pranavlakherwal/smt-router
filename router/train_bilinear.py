@@ -59,16 +59,22 @@ def main():
     if args.dry_run:
         log.info("\n=== Dry Run: Loading data only ===")
         from sentence_transformers import SentenceTransformer
+
         from router.learned_phi import build_precomputed_datasets
 
         prompt_encoder = SentenceTransformer("all-mpnet-base-v2")
         cache_path = DATA_DIR / "embedding_cache.pt"
         datasets = build_precomputed_datasets(
-            db_path, prompt_encoder, model_to_idx, cache_path=cache_path,
+            db_path,
+            prompt_encoder,
+            model_to_idx,
+            cache_path=cache_path,
         )
         for split, ds in datasets.items():
             log.info(f"  {split}: {len(ds):,} samples")
-        log.info(f"Sample: emb_shape={datasets['train'][0][0].shape}, model_idx={datasets['train'][0][1].item()}, score={datasets['train'][0][2].item():.3f}")
+        log.info(
+            f"Sample: emb_shape={datasets['train'][0][0].shape}, model_idx={datasets['train'][0][1].item()}, score={datasets['train'][0][2].item():.3f}"
+        )
         log.info("Dry run complete.")
         return
 
@@ -103,6 +109,7 @@ def main():
     history["num_aliases"] = registry.num_aliases
 
     history_path = DATA_DIR / "training_history.json"
+
     # Convert any non-serializable values
     def make_serializable(obj):
         if isinstance(obj, (torch.Tensor,)):
@@ -118,7 +125,7 @@ def main():
 
     history_path.write_text(json.dumps(serializable_history, indent=2))
     log.info(f"\nTraining history saved: {history_path}")
-    log.info(f"Total time: {elapsed/60:.1f} minutes")
+    log.info(f"Total time: {elapsed / 60:.1f} minutes")
 
 
 if __name__ == "__main__":
