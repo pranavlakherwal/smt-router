@@ -1,17 +1,17 @@
 """Endpoint registry for the S(M,T) router.
 
 Manages the set of available endpoints (LLMs, agents, scripts, MCP tools).
-Loads from config, supports runtime registration/deregistration, and
-provides lookup by ID or alias.
+Supports runtime registration/deregistration, and lookup by ID or alias.
+
+The default registry holds the measured model settings in data/measured_capability.json,
+each with its list price on the day it was measured. The paper's hand-typed example
+endpoints of mid 2025 load only on request.
 """
 
 import logging
 from typing import Dict, List, Optional
 
-from router.config import (
-    ALL_ENDPOINTS,
-    MODEL_ALIASES,
-)
+from router.config import MODEL_ALIASES, PAPER_EXAMPLE_ENDPOINTS
 from router.models import Endpoint, EndpointType
 
 logger = logging.getLogger(__name__)
@@ -20,13 +20,21 @@ logger = logging.getLogger(__name__)
 class EndpointRegistry:
     """Registry of all available endpoints."""
 
-    def __init__(self, load_defaults: bool = True):
+    def __init__(self, load_defaults: bool = True, measured=None, include_paper_examples: bool = False):
         self._endpoints: Dict[str, Endpoint] = {}
-        self._aliases: Dict[str, str] = dict(MODEL_ALIASES)
+        self._aliases: Dict[str, str] = dict(MODEL_ALIASES) if include_paper_examples else {}
 
         if load_defaults:
-            for ep in ALL_ENDPOINTS:
+            if measured is None:
+                from router.measured import MeasuredTable
+
+                measured = MeasuredTable()
+            for ep in measured.endpoints():
                 self.register(ep)
+        if include_paper_examples:
+            for ep in PAPER_EXAMPLE_ENDPOINTS:
+                self.register(ep.model_copy(deep=True))
+        if self._endpoints:
             logger.info(f"Registry loaded: {len(self._endpoints)} endpoints ({self.count_by_type()})")
 
     def register(self, endpoint: Endpoint):

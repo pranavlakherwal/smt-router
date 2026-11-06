@@ -1,0 +1,3521 @@
+{
+ "as_of": "2026-11-06",
+ "measured": "5 and 6 November 2026, through OpenRouter, thinking left at each model's default unless the entry name ends @think-off",
+ "tasks_per_kind": 100,
+ "fresh_tasks_per_kind": 100,
+ "bars": [
+  90,
+  95,
+  98
+ ],
+ "kinds": {
+  "gsm8k_math": {
+   "label": "Maths word problems",
+   "task_set": "GSM8K, test split",
+   "checker": "the final number matches the key"
+  },
+  "arc_reasoning": {
+   "label": "Science questions",
+   "task_set": "ARC-Challenge, test split",
+   "checker": "the chosen letter matches the key"
+  },
+  "scifact_claims": {
+   "label": "Checking a claim against a paper",
+   "task_set": "SciFact, validation split; fresh tasks from the train split",
+   "checker": "the label (supports, refutes, not enough information) matches the key"
+  },
+  "mmlu_knowledge": {
+   "label": "General knowledge exam",
+   "task_set": "MMLU, test split",
+   "checker": "the chosen letter matches the key"
+  }
+ },
+ "fields": {
+  "right": "right answers on the first tasks",
+  "n": "first tasks answered",
+  "usd_per_task": "measured cost per task, first tasks",
+  "empty": "replies with no answer in them, counted wrong",
+  "cut": "replies that stopped at the output limit",
+  "fresh_right": "right answers on fresh tasks, null when the entry was never sent to them",
+  "fresh_n": "fresh tasks answered",
+  "fresh_usd_per_task": "measured cost per task, fresh tasks"
+ },
+ "entries": {
+  "amazon/nova-lite-v1": {
+   "model": "amazon/nova-lite-v1",
+   "extra_body": {},
+   "price_in_per_m": 0.06,
+   "price_out_per_m": 0.24,
+   "context_length": 300000,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 113.3,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 87,
+     "n": 100,
+     "usd_per_task": 6.01e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 2.533e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 81,
+     "n": 100,
+     "usd_per_task": 3.164e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 79,
+     "n": 100,
+     "usd_per_task": 3.891e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "amazon/nova-micro-v1": {
+   "model": "amazon/nova-micro-v1",
+   "extra_body": {},
+   "price_in_per_m": 0.035,
+   "price_out_per_m": 0.14,
+   "context_length": 128000,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 95.5,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 41,
+     "n": 100,
+     "usd_per_task": 3.931e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 87,
+     "n": 100,
+     "usd_per_task": 7.12e-06,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 72,
+     "n": 100,
+     "usd_per_task": 1.804e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 63,
+     "n": 100,
+     "usd_per_task": 1.619e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "bytedance-seed/seed-1.6-flash": {
+   "model": "bytedance-seed/seed-1.6-flash",
+   "extra_body": {},
+   "price_in_per_m": 0.075,
+   "price_out_per_m": 0.3,
+   "context_length": 262144,
+   "supports_vision": true,
+   "mean_thinking_tokens": 510.6,
+   "mean_output_tokens": 687.2,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 0.00024915,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 0.00020774,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 86,
+     "n": 100,
+     "usd_per_task": 0.00012568,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 81,
+     "n": 100,
+     "usd_per_task": 0.00032719,
+     "empty": 4,
+     "cut": 4,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "bytedance-seed/seed-1.6-flash@think-off": {
+   "model": "bytedance-seed/seed-1.6-flash",
+   "extra_body": {
+    "reasoning": {
+     "enabled": false
+    }
+   },
+   "price_in_per_m": 0.075,
+   "price_out_per_m": 0.3,
+   "context_length": 262144,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 289.3,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 9.991e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 0.00011049,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 79,
+     "n": 100,
+     "usd_per_task": 4.036e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 84,
+     "n": 100,
+     "usd_per_task": 0.0001599,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "bytedance-seed/seed-2.0-mini": {
+   "model": "bytedance-seed/seed-2.0-mini",
+   "extra_body": {},
+   "price_in_per_m": 0.1,
+   "price_out_per_m": 0.4,
+   "context_length": 262144,
+   "supports_vision": true,
+   "mean_thinking_tokens": 592.5,
+   "mean_output_tokens": 641.4,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 0.00022178,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 0.00019852,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 81,
+     "n": 100,
+     "usd_per_task": 0.00038467,
+     "empty": 6,
+     "cut": 6,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 87,
+     "n": 100,
+     "usd_per_task": 0.00031511,
+     "empty": 2,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "bytedance-seed/seed-2.0-mini@think-off": {
+   "model": "bytedance-seed/seed-2.0-mini",
+   "extra_body": {
+    "reasoning": {
+     "enabled": false
+    }
+   },
+   "price_in_per_m": 0.1,
+   "price_out_per_m": 0.4,
+   "context_length": 262144,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 179.1,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 7.253e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 0.00010006,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 89,
+     "n": 100,
+     "usd_per_task": 5.575e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 86,
+     "n": 100,
+     "usd_per_task": 0.00015051,
+     "empty": 0,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "deepseek/deepseek-v3.2": {
+   "model": "deepseek/deepseek-v3.2",
+   "extra_body": {},
+   "price_in_per_m": 0.26,
+   "price_out_per_m": 0.38,
+   "context_length": 163840,
+   "supports_vision": false,
+   "mean_thinking_tokens": 10.6,
+   "mean_output_tokens": 132.5,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 9.552e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 96,
+     "n": 100,
+     "usd_per_task": 7.294e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 87,
+     "n": 100,
+     "usd_per_task": 0.00012704,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 90,
+     "n": 100,
+     "usd_per_task": 0.00012121,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "deepseek/deepseek-v4-flash": {
+   "model": "deepseek/deepseek-v4-flash",
+   "extra_body": {},
+   "price_in_per_m": 0.091,
+   "price_out_per_m": 0.182,
+   "context_length": 1048576,
+   "supports_vision": false,
+   "mean_thinking_tokens": 309.7,
+   "mean_output_tokens": 350.9,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 96,
+     "n": 100,
+     "usd_per_task": 6.731e-05,
+     "empty": 3,
+     "cut": 3,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 4.356e-05,
+     "empty": 2,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 91,
+     "n": 100,
+     "usd_per_task": 4.729e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 81,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 3.952e-05
+    },
+    "mmlu_knowledge": {
+     "right": 88,
+     "n": 100,
+     "usd_per_task": 7.67e-05,
+     "empty": 2,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "deepseek/deepseek-v4.1-flash": {
+   "model": "deepseek/deepseek-v4.1-flash",
+   "extra_body": {},
+   "price_in_per_m": 0.045,
+   "price_out_per_m": 0.5,
+   "context_length": 1048576,
+   "supports_vision": true,
+   "mean_thinking_tokens": 302.1,
+   "mean_output_tokens": 335.1,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 0.00023078,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 0.00010261,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 87,
+     "n": 100,
+     "usd_per_task": 0.0002085,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 90,
+     "n": 100,
+     "usd_per_task": 0.00028952,
+     "empty": 3,
+     "cut": 3,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "google/gemini-2.5-flash-lite": {
+   "model": "google/gemini-2.5-flash-lite",
+   "extra_body": {},
+   "price_in_per_m": 0.1,
+   "price_out_per_m": 0.4,
+   "context_length": 1048576,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 230.2,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 9.438e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 80,
+     "n": 100,
+     "usd_per_task": 0.00012005,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 80,
+     "n": 100,
+     "usd_per_task": 5.123e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 66,
+     "n": 100,
+     "usd_per_task": 0.00018175,
+     "empty": 0,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "google/gemini-3.7-flash": {
+   "model": "google/gemini-3.7-flash",
+   "extra_body": {},
+   "price_in_per_m": 0.75,
+   "price_out_per_m": 3.75,
+   "context_length": 1048576,
+   "supports_vision": true,
+   "mean_thinking_tokens": 190.4,
+   "mean_output_tokens": 263.3,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 0.00114609,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 0.00089213,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 0.00097509,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 93,
+     "n": 100,
+     "usd_per_task": 0.00152559,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "google/gemma-3-12b-it": {
+   "model": "google/gemma-3-12b-it",
+   "extra_body": {},
+   "price_in_per_m": 0.05,
+   "price_out_per_m": 0.15,
+   "context_length": 131072,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 149.7,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 3.466e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 90,
+     "n": 100,
+     "usd_per_task": 3.655e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 71,
+     "n": 100,
+     "usd_per_task": 3.623e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 74,
+     "n": 100,
+     "usd_per_task": 5.434e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "google/gemma-3-27b-it": {
+   "model": "google/gemma-3-27b-it",
+   "extra_body": {},
+   "price_in_per_m": 0.08,
+   "price_out_per_m": 0.35,
+   "context_length": 131072,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 146.5,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 96,
+     "n": 100,
+     "usd_per_task": 4.484e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 94,
+     "n": 100,
+     "usd_per_task": 5.624e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 79,
+     "n": 100,
+     "usd_per_task": 4.162e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 80,
+     "n": 100,
+     "usd_per_task": 9.611e-05,
+     "empty": 0,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "google/gemma-3-4b-it": {
+   "model": "google/gemma-3-4b-it",
+   "extra_body": {},
+   "price_in_per_m": 0.05,
+   "price_out_per_m": 0.1,
+   "context_length": 131072,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 189.2,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 83,
+     "n": 100,
+     "usd_per_task": 3.707e-05,
+     "empty": 0,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 81,
+     "n": 100,
+     "usd_per_task": 2.015e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 60,
+     "n": 100,
+     "usd_per_task": 2.477e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 65,
+     "n": 100,
+     "usd_per_task": 3.364e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "google/gemma-4-26b-a4b-it": {
+   "model": "google/gemma-4-26b-a4b-it",
+   "extra_body": {},
+   "price_in_per_m": 0.046,
+   "price_out_per_m": 0.139,
+   "context_length": 262144,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 202.9,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 5.894e-05,
+     "empty": 0,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 4.409e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 95,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 6.046e-05
+    },
+    "scifact_claims": {
+     "right": 87,
+     "n": 100,
+     "usd_per_task": 4.286e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 89,
+     "n": 100,
+     "usd_per_task": 6.479e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "google/gemma-4-31b-it": {
+   "model": "google/gemma-4-31b-it",
+   "extra_body": {},
+   "price_in_per_m": 0.2,
+   "price_out_per_m": 0.4,
+   "context_length": 262144,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 146.1,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 6.752e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 7.888e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 94,
+     "n": 100,
+     "usd_per_task": 5.993e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 81,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 5.905e-05
+    },
+    "mmlu_knowledge": {
+     "right": 91,
+     "n": 100,
+     "usd_per_task": 0.0001042,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 97,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 0.00010064
+    }
+   }
+  },
+  "ibm-granite/granite-4.2-8b": {
+   "model": "ibm-granite/granite-4.2-8b",
+   "extra_body": {},
+   "price_in_per_m": 0.06,
+   "price_out_per_m": 0.25,
+   "context_length": 131072,
+   "supports_vision": false,
+   "mean_thinking_tokens": 1111.2,
+   "mean_output_tokens": 1250.4,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 85,
+     "n": 100,
+     "usd_per_task": 0.00023299,
+     "empty": 14,
+     "cut": 14,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 94,
+     "n": 100,
+     "usd_per_task": 0.00012805,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 86,
+     "n": 100,
+     "usd_per_task": 0.00021022,
+     "empty": 4,
+     "cut": 4,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 81,
+     "n": 100,
+     "usd_per_task": 0.00025647,
+     "empty": 10,
+     "cut": 12,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "ibm-granite/granite-4.2-8b@think-off": {
+   "model": "ibm-granite/granite-4.2-8b",
+   "extra_body": {
+    "reasoning": {
+     "enabled": false
+    }
+   },
+   "price_in_per_m": 0.06,
+   "price_out_per_m": 0.25,
+   "context_length": 131072,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 386.2,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 93,
+     "n": 100,
+     "usd_per_task": 9.96e-05,
+     "empty": 0,
+     "cut": 5,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 4.521e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 73,
+     "n": 100,
+     "usd_per_task": 2.707e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 82,
+     "n": 100,
+     "usd_per_task": 0.00011543,
+     "empty": 0,
+     "cut": 6,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "inception/mercury-2.5": {
+   "model": "inception/mercury-2.5",
+   "extra_body": {},
+   "price_in_per_m": 0.04,
+   "price_out_per_m": 0.15,
+   "context_length": 260000,
+   "supports_vision": false,
+   "mean_thinking_tokens": 839.6,
+   "mean_output_tokens": 921.7,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 99,
+     "n": 100,
+     "usd_per_task": 0.00013876,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 0.00011887,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 91,
+     "n": 100,
+     "usd_per_task": 0.00014896,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 89,
+     "n": 100,
+     "usd_per_task": 0.00017848,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "inception/mercury-2.5@think-off": {
+   "model": "inception/mercury-2.5",
+   "extra_body": {
+    "reasoning": {
+     "enabled": false
+    }
+   },
+   "price_in_per_m": 0.04,
+   "price_out_per_m": 0.15,
+   "context_length": 260000,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 107.8,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 95,
+     "n": 100,
+     "usd_per_task": 2.332e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 99,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 2.205e-05
+    },
+    "arc_reasoning": {
+     "right": 93,
+     "n": 100,
+     "usd_per_task": 1.908e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 83,
+     "n": 100,
+     "usd_per_task": 2.218e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 90,
+     "n": 100,
+     "usd_per_task": 3.237e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 93,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 3.008e-05
+    }
+   }
+  },
+  "inception/mercury-3": {
+   "model": "inception/mercury-3",
+   "extra_body": {},
+   "price_in_per_m": 0.1,
+   "price_out_per_m": 0.35,
+   "context_length": 1000000,
+   "supports_vision": false,
+   "mean_thinking_tokens": 286.6,
+   "mean_output_tokens": 309.6,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 95,
+     "n": 100,
+     "usd_per_task": 0.00018158,
+     "empty": 3,
+     "cut": 3,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 4.731e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 90,
+     "n": 100,
+     "usd_per_task": 0.0001153,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 90,
+     "n": 100,
+     "usd_per_task": 0.00016603,
+     "empty": 2,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "inclusionai/ling-3.0-flash": {
+   "model": "inclusionai/ling-3.0-flash",
+   "extra_body": {},
+   "price_in_per_m": 0.021,
+   "price_out_per_m": 0.063,
+   "context_length": 262144,
+   "supports_vision": false,
+   "mean_thinking_tokens": 277.9,
+   "mean_output_tokens": 320.2,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 99,
+     "n": 100,
+     "usd_per_task": 2.004e-05,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": 98,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 1.939e-05
+    },
+    "arc_reasoning": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 2.078e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 96,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 2.445e-05
+    },
+    "scifact_claims": {
+     "right": 85,
+     "n": 100,
+     "usd_per_task": 2.03e-05,
+     "empty": 1,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 89,
+     "n": 100,
+     "usd_per_task": 4.44e-05,
+     "empty": 3,
+     "cut": 4,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "inclusionai/ling-3.0-tiny": {
+   "model": "inclusionai/ling-3.0-tiny",
+   "extra_body": {},
+   "price_in_per_m": 0.015,
+   "price_out_per_m": 0.045,
+   "context_length": 262144,
+   "supports_vision": false,
+   "mean_thinking_tokens": 779.7,
+   "mean_output_tokens": 841.4,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 89,
+     "n": 100,
+     "usd_per_task": 4.444e-05,
+     "empty": 0,
+     "cut": 10,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 87,
+     "n": 100,
+     "usd_per_task": 3.176e-05,
+     "empty": 0,
+     "cut": 7,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 85,
+     "n": 100,
+     "usd_per_task": 2.782e-05,
+     "empty": 0,
+     "cut": 3,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 73,
+     "n": 100,
+     "usd_per_task": 5.925e-05,
+     "empty": 0,
+     "cut": 16,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "inclusionai/ling-3.0-tiny@think-off": {
+   "model": "inclusionai/ling-3.0-tiny",
+   "extra_body": {
+    "reasoning": {
+     "enabled": false
+    }
+   },
+   "price_in_per_m": 0.015,
+   "price_out_per_m": 0.045,
+   "context_length": 262144,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 147.1,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 91,
+     "n": 100,
+     "usd_per_task": 9.09e-06,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 90,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 7.59e-06
+    },
+    "arc_reasoning": {
+     "right": 94,
+     "n": 100,
+     "usd_per_task": 6.89e-06,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 91,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 7.93e-06
+    },
+    "scifact_claims": {
+     "right": 59,
+     "n": 100,
+     "usd_per_task": 6.65e-06,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 74,
+     "n": 100,
+     "usd_per_task": 1.569e-05,
+     "empty": 0,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "inclusionai/ling-3.1-flash": {
+   "model": "inclusionai/ling-3.1-flash",
+   "extra_body": {},
+   "price_in_per_m": 0.075,
+   "price_out_per_m": 0.225,
+   "context_length": 1000000,
+   "supports_vision": false,
+   "mean_thinking_tokens": 393.4,
+   "mean_output_tokens": 457.5,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 99,
+     "n": 100,
+     "usd_per_task": 9.46e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 9.044e-05,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 9.215e-05,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 86,
+     "n": 100,
+     "usd_per_task": 0.00019411,
+     "empty": 7,
+     "cut": 8,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "meta-llama/llama-3.1-8b-instruct": {
+   "model": "meta-llama/llama-3.1-8b-instruct",
+   "extra_body": {},
+   "price_in_per_m": 0.05,
+   "price_out_per_m": 0.08,
+   "context_length": 131072,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 128.1,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 84,
+     "n": 100,
+     "usd_per_task": 9.88e-06,
+     "empty": 0,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 76,
+     "n": 100,
+     "usd_per_task": 6.99e-06,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 68,
+     "n": 100,
+     "usd_per_task": 1.499e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 59,
+     "n": 100,
+     "usd_per_task": 2.589e-05,
+     "empty": 0,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "meta-llama/llama-3.2-1b-instruct": {
+   "model": "meta-llama/llama-3.2-1b-instruct",
+   "extra_body": {},
+   "price_in_per_m": 0.027,
+   "price_out_per_m": 0.201,
+   "context_length": 60000,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 178.3,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 33,
+     "n": 100,
+     "usd_per_task": 4.729e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 0,
+     "n": 100,
+     "usd_per_task": 4.474e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 29,
+     "n": 100,
+     "usd_per_task": 1.536e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 1,
+     "n": 100,
+     "usd_per_task": 5.843e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "meta-llama/llama-3.3-70b-instruct": {
+   "model": "meta-llama/llama-3.3-70b-instruct",
+   "extra_body": {},
+   "price_in_per_m": 0.2,
+   "price_out_per_m": 0.52,
+   "context_length": 131072,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 165.5,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 96,
+     "n": 100,
+     "usd_per_task": 0.00012339,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 95,
+     "n": 100,
+     "usd_per_task": 0.00017942,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 84,
+     "n": 100,
+     "usd_per_task": 0.00017344,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 82,
+     "n": 100,
+     "usd_per_task": 0.00022347,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "meta-llama/llama-4-scout": {
+   "model": "meta-llama/llama-4-scout",
+   "extra_body": {},
+   "price_in_per_m": 0.1,
+   "price_out_per_m": 0.3,
+   "context_length": 1310720,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 216.7,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 6.138e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 98,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 6.69e-05
+    },
+    "arc_reasoning": {
+     "right": 96,
+     "n": 100,
+     "usd_per_task": 0.00013235,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 82,
+     "n": 100,
+     "usd_per_task": 5.959e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 87,
+     "n": 100,
+     "usd_per_task": 0.00014327,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "microsoft/phi-4": {
+   "model": "microsoft/phi-4",
+   "extra_body": {},
+   "price_in_per_m": 0.07,
+   "price_out_per_m": 0.14,
+   "context_length": 16384,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 133.2,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 93,
+     "n": 100,
+     "usd_per_task": 3.885e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 95,
+     "n": 100,
+     "usd_per_task": 2.388e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 85,
+     "n": 100,
+     "usd_per_task": 3.631e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 82,
+     "n": 100,
+     "usd_per_task": 3.267e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "minimax/minimax-m2.5": {
+   "model": "minimax/minimax-m2.5",
+   "extra_body": {},
+   "price_in_per_m": 0.27,
+   "price_out_per_m": 0.95,
+   "context_length": 204800,
+   "supports_vision": false,
+   "mean_thinking_tokens": 97.9,
+   "mean_output_tokens": 516.7,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 95,
+     "n": 100,
+     "usd_per_task": 0.0009661,
+     "empty": 2,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 0.00063994,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 88,
+     "n": 100,
+     "usd_per_task": 0.00070574,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 83,
+     "n": 100,
+     "usd_per_task": 0.00126338,
+     "empty": 7,
+     "cut": 6,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "minimax/minimax-m3.1-flash": {
+   "model": "minimax/minimax-m3.1-flash",
+   "extra_body": {},
+   "price_in_per_m": 0.15,
+   "price_out_per_m": 0.6,
+   "context_length": 1048576,
+   "supports_vision": true,
+   "mean_thinking_tokens": 299.5,
+   "mean_output_tokens": 364.5,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 0.00018133,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 96,
+     "n": 100,
+     "usd_per_task": 0.00018829,
+     "empty": 2,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 87,
+     "n": 100,
+     "usd_per_task": 0.00014429,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 85,
+     "n": 100,
+     "usd_per_task": 0.00042748,
+     "empty": 6,
+     "cut": 6,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "mistralai/ministral-14b-2512": {
+   "model": "mistralai/ministral-14b-2512",
+   "extra_body": {},
+   "price_in_per_m": 0.2,
+   "price_out_per_m": 0.2,
+   "context_length": 262144,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 77.6,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 96,
+     "n": 100,
+     "usd_per_task": 6.098e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 95,
+     "n": 100,
+     "usd_per_task": 2.017e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 80,
+     "n": 100,
+     "usd_per_task": 8.917e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 79,
+     "n": 100,
+     "usd_per_task": 4.792e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "mistralai/ministral-3b-2512": {
+   "model": "mistralai/ministral-3b-2512",
+   "extra_body": {},
+   "price_in_per_m": 0.1,
+   "price_out_per_m": 0.1,
+   "context_length": 131072,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 85.9,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 91,
+     "n": 100,
+     "usd_per_task": 3.102e-05,
+     "empty": 0,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 1.097e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 85,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 1.193e-05
+    },
+    "scifact_claims": {
+     "right": 74,
+     "n": 100,
+     "usd_per_task": 4.246e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 74,
+     "n": 100,
+     "usd_per_task": 2.509e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "mistralai/ministral-8b-2512": {
+   "model": "mistralai/ministral-8b-2512",
+   "extra_body": {},
+   "price_in_per_m": 0.15,
+   "price_out_per_m": 0.15,
+   "context_length": 262144,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 76.5,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 95,
+     "n": 100,
+     "usd_per_task": 4.436e-05,
+     "empty": 0,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 94,
+     "n": 100,
+     "usd_per_task": 1.48e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 75,
+     "n": 100,
+     "usd_per_task": 6.461e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 78,
+     "n": 100,
+     "usd_per_task": 3.664e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "mistralai/mistral-nemo": {
+   "model": "mistralai/mistral-nemo",
+   "extra_body": {},
+   "price_in_per_m": 0.029,
+   "price_out_per_m": 0.03,
+   "context_length": 131072,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 94.7,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 84,
+     "n": 100,
+     "usd_per_task": 7.8e-06,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 86,
+     "n": 100,
+     "usd_per_task": 4.38e-06,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 69,
+     "n": 100,
+     "usd_per_task": 1.408e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 63,
+     "n": 100,
+     "usd_per_task": 6.21e-06,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "mistralai/mistral-small-24b-instruct-2501": {
+   "model": "mistralai/mistral-small-24b-instruct-2501",
+   "extra_body": {},
+   "price_in_per_m": 0.05,
+   "price_out_per_m": 0.08,
+   "context_length": 32768,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 111.3,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 2.719e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 96,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 2.635e-05
+    },
+    "arc_reasoning": {
+     "right": 95,
+     "n": 100,
+     "usd_per_task": 1.97e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 96,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 2.039e-05
+    },
+    "scifact_claims": {
+     "right": 82,
+     "n": 100,
+     "usd_per_task": 2.577e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 85,
+     "n": 100,
+     "usd_per_task": 2.773e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "mistralai/mistral-small-2603": {
+   "model": "mistralai/mistral-small-2603",
+   "extra_body": {},
+   "price_in_per_m": 0.15,
+   "price_out_per_m": 0.6,
+   "context_length": 262144,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 79.8,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 93,
+     "n": 100,
+     "usd_per_task": 0.00012474,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 3.498e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 81,
+     "n": 100,
+     "usd_per_task": 7.132e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 85,
+     "n": 100,
+     "usd_per_task": 9.504e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "mistralai/mistral-small-3.2-24b-instruct": {
+   "model": "mistralai/mistral-small-3.2-24b-instruct",
+   "extra_body": {},
+   "price_in_per_m": 0.075,
+   "price_out_per_m": 0.2,
+   "context_length": 256000,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 95.6,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 95,
+     "n": 100,
+     "usd_per_task": 5.302e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 96,
+     "n": 100,
+     "usd_per_task": 2.17e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 76,
+     "n": 100,
+     "usd_per_task": 4.423e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 85,
+     "n": 100,
+     "usd_per_task": 4.159e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "nex-agi/nex-n2.5-mini": {
+   "model": "nex-agi/nex-n2.5-mini",
+   "extra_body": {},
+   "price_in_per_m": 0.025,
+   "price_out_per_m": 0.1,
+   "context_length": 262144,
+   "supports_vision": true,
+   "mean_thinking_tokens": 220.2,
+   "mean_output_tokens": 240.8,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 2.734e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 97,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 2.797e-05
+    },
+    "arc_reasoning": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 1.733e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 97,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 1.701e-05
+    },
+    "scifact_claims": {
+     "right": 87,
+     "n": 100,
+     "usd_per_task": 1.535e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 88,
+     "n": 100,
+     "usd_per_task": 5.62e-05,
+     "empty": 6,
+     "cut": 6,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "nex-agi/nex-n2.5-pro": {
+   "model": "nex-agi/nex-n2.5-pro",
+   "extra_body": {},
+   "price_in_per_m": 0.075,
+   "price_out_per_m": 0.25,
+   "context_length": 262144,
+   "supports_vision": true,
+   "mean_thinking_tokens": 255.0,
+   "mean_output_tokens": 276.7,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 95,
+     "n": 100,
+     "usd_per_task": 8.774e-05,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 4.482e-05,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 87,
+     "n": 100,
+     "usd_per_task": 7.672e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 89,
+     "n": 100,
+     "usd_per_task": 0.00012811,
+     "empty": 4,
+     "cut": 4,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "nvidia/nemotron-3-nano-30b-a3b": {
+   "model": "nvidia/nemotron-3-nano-30b-a3b",
+   "extra_body": {},
+   "price_in_per_m": 0.06,
+   "price_out_per_m": 0.24,
+   "context_length": 262144,
+   "supports_vision": false,
+   "mean_thinking_tokens": 551.3,
+   "mean_output_tokens": 579.4,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 86,
+     "n": 100,
+     "usd_per_task": 0.00027822,
+     "empty": 12,
+     "cut": 12,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 96,
+     "n": 100,
+     "usd_per_task": 7.498e-05,
+     "empty": 2,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 88,
+     "n": 100,
+     "usd_per_task": 8.099e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 84,
+     "n": 100,
+     "usd_per_task": 0.00017393,
+     "empty": 5,
+     "cut": 5,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "nvidia/nemotron-3-nano-30b-a3b@think-off": {
+   "model": "nvidia/nemotron-3-nano-30b-a3b",
+   "extra_body": {
+    "reasoning": {
+     "enabled": false
+    }
+   },
+   "price_in_per_m": 0.06,
+   "price_out_per_m": 0.24,
+   "context_length": 262144,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 45.5,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 88,
+     "n": 100,
+     "usd_per_task": 3.927e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 91,
+     "n": 100,
+     "usd_per_task": 7.92e-06,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 92,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 9.03e-06
+    },
+    "scifact_claims": {
+     "right": 53,
+     "n": 100,
+     "usd_per_task": 3.283e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 79,
+     "n": 100,
+     "usd_per_task": 1.554e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "nvidia/nemotron-3.5-lightning": {
+   "model": "nvidia/nemotron-3.5-lightning",
+   "extra_body": {},
+   "price_in_per_m": 0.07,
+   "price_out_per_m": 0.2,
+   "context_length": 262144,
+   "supports_vision": false,
+   "mean_thinking_tokens": 379.5,
+   "mean_output_tokens": 462.3,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 8.428e-05,
+     "empty": 3,
+     "cut": 4,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 90,
+     "n": 100,
+     "usd_per_task": 4.023e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 74,
+     "n": 100,
+     "usd_per_task": 9.087e-05,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 77,
+     "n": 100,
+     "usd_per_task": 9.044e-05,
+     "empty": 2,
+     "cut": 3,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "nvidia/nemotron-3.5-lightning@think-off": {
+   "model": "nvidia/nemotron-3.5-lightning",
+   "extra_body": {
+    "reasoning": {
+     "enabled": false
+    }
+   },
+   "price_in_per_m": 0.07,
+   "price_out_per_m": 0.2,
+   "context_length": 262144,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 126.8,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 90,
+     "n": 100,
+     "usd_per_task": 4.346e-05,
+     "empty": 0,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 1.972e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 67,
+     "n": 100,
+     "usd_per_task": 2.922e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 74,
+     "n": 100,
+     "usd_per_task": 3.433e-05,
+     "empty": 0,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "openai/gpt-4.1-nano": {
+   "model": "openai/gpt-4.1-nano",
+   "extra_body": {},
+   "price_in_per_m": 0.1,
+   "price_out_per_m": 0.4,
+   "context_length": 1047576,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 92.1,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 90,
+     "n": 100,
+     "usd_per_task": 6.692e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 90,
+     "n": 100,
+     "usd_per_task": 3.687e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 68,
+     "n": 100,
+     "usd_per_task": 5.278e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 79,
+     "n": 100,
+     "usd_per_task": 7.161e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "openai/gpt-4o-mini": {
+   "model": "openai/gpt-4o-mini",
+   "extra_body": {},
+   "price_in_per_m": 0.15,
+   "price_out_per_m": 0.6,
+   "context_length": 128000,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 79.1,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 0.00013453,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 94,
+     "n": 100,
+     "usd_per_task": 2.909e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 80,
+     "n": 100,
+     "usd_per_task": 7.856e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 78,
+     "n": 100,
+     "usd_per_task": 6.883e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "openai/gpt-5.4-nano": {
+   "model": "openai/gpt-5.4-nano",
+   "extra_body": {},
+   "price_in_per_m": 0.2,
+   "price_out_per_m": 1.25,
+   "context_length": 400000,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 54.9,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 88,
+     "n": 100,
+     "usd_per_task": 0.00013897,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 89,
+     "n": 100,
+     "usd_per_task": 6.554e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 80,
+     "n": 100,
+     "usd_per_task": 0.0001119,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 79,
+     "n": 100,
+     "usd_per_task": 0.00011658,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "openai/gpt-5.6-luna": {
+   "model": "openai/gpt-5.6-luna",
+   "extra_body": {},
+   "price_in_per_m": 0.2,
+   "price_out_per_m": 1.2,
+   "context_length": 1050000,
+   "supports_vision": true,
+   "mean_thinking_tokens": 54.6,
+   "mean_output_tokens": 93.8,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 95,
+     "n": 100,
+     "usd_per_task": 0.00018355,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 9.81e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 90,
+     "n": 100,
+     "usd_per_task": 0.00012328,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 0.00020745,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "openai/gpt-6-luna": {
+   "model": "openai/gpt-6-luna",
+   "extra_body": {},
+   "price_in_per_m": 0.1,
+   "price_out_per_m": 0.5,
+   "context_length": 1050000,
+   "supports_vision": true,
+   "mean_thinking_tokens": 77.7,
+   "mean_output_tokens": 113.2,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 95,
+     "n": 100,
+     "usd_per_task": 7.408e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 4.518e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 98,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 4.165e-05
+    },
+    "scifact_claims": {
+     "right": 86,
+     "n": 100,
+     "usd_per_task": 9.079e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 94,
+     "n": 100,
+     "usd_per_task": 9.729e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 97,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 7.704e-05
+    }
+   }
+  },
+  "openai/gpt-oss-120b": {
+   "model": "openai/gpt-oss-120b",
+   "extra_body": {},
+   "price_in_per_m": 0.15,
+   "price_out_per_m": 0.6,
+   "context_length": 131072,
+   "supports_vision": false,
+   "mean_thinking_tokens": 157.5,
+   "mean_output_tokens": 217.2,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 8.531e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 4.902e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 86,
+     "n": 100,
+     "usd_per_task": 8.632e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 82,
+     "n": 100,
+     "usd_per_task": 0.00010629,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "openai/gpt-oss-20b": {
+   "model": "openai/gpt-oss-20b",
+   "extra_body": {},
+   "price_in_per_m": 0.03,
+   "price_out_per_m": 0.13,
+   "context_length": 131072,
+   "supports_vision": false,
+   "mean_thinking_tokens": 173.7,
+   "mean_output_tokens": 318.8,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 94,
+     "n": 100,
+     "usd_per_task": 5.631e-05,
+     "empty": 3,
+     "cut": 3,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 93,
+     "n": 100,
+     "usd_per_task": 3.217e-05,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 83,
+     "n": 100,
+     "usd_per_task": 4.605e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 79,
+     "n": 100,
+     "usd_per_task": 5.651e-05,
+     "empty": 2,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "prism-ml/ternary-bonsai-2-9b": {
+   "model": "prism-ml/ternary-bonsai-2-9b",
+   "extra_body": {},
+   "price_in_per_m": 0.08,
+   "price_out_per_m": 0.13,
+   "context_length": 262144,
+   "supports_vision": true,
+   "mean_thinking_tokens": 1235.8,
+   "mean_output_tokens": 1338.0,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 89,
+     "n": 100,
+     "usd_per_task": 0.00018284,
+     "empty": 9,
+     "cut": 9,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 94,
+     "n": 100,
+     "usd_per_task": 0.00012583,
+     "empty": 2,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 87,
+     "n": 100,
+     "usd_per_task": 0.0002135,
+     "empty": 4,
+     "cut": 4,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 75,
+     "n": 100,
+     "usd_per_task": 0.00024174,
+     "empty": 14,
+     "cut": 16,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "prism-ml/ternary-bonsai-2-9b@think-off": {
+   "model": "prism-ml/ternary-bonsai-2-9b",
+   "extra_body": {
+    "reasoning": {
+     "enabled": false
+    }
+   },
+   "price_in_per_m": 0.08,
+   "price_out_per_m": 0.13,
+   "context_length": 262144,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 325.4,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 95,
+     "n": 100,
+     "usd_per_task": 4.53e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 6.211e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 81,
+     "n": 100,
+     "usd_per_task": 4.25e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 79,
+     "n": 100,
+     "usd_per_task": 8.81e-05,
+     "empty": 0,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "qwen/qwen3-30b-a3b-instruct-2507": {
+   "model": "qwen/qwen3-30b-a3b-instruct-2507",
+   "extra_body": {},
+   "price_in_per_m": 0.1,
+   "price_out_per_m": 0.3,
+   "context_length": 262144,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 115.9,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 94,
+     "n": 100,
+     "usd_per_task": 6.677e-05,
+     "empty": 0,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 96,
+     "n": 100,
+     "usd_per_task": 3.495e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 77,
+     "n": 100,
+     "usd_per_task": 5.391e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 85,
+     "n": 100,
+     "usd_per_task": 6.73e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "qwen/qwen3.7-flash": {
+   "model": "qwen/qwen3.7-flash",
+   "extra_body": {},
+   "price_in_per_m": 0.03,
+   "price_out_per_m": 0.13,
+   "context_length": 1000000,
+   "supports_vision": true,
+   "mean_thinking_tokens": 943.0,
+   "mean_output_tokens": 1052.5,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 99,
+     "n": 100,
+     "usd_per_task": 0.00016734,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 96,
+     "n": 100,
+     "usd_per_task": 0.00012936,
+     "empty": 3,
+     "cut": 3,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 7.028e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 82,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 7.444e-05
+    },
+    "mmlu_knowledge": {
+     "right": 81,
+     "n": 100,
+     "usd_per_task": 0.00020591,
+     "empty": 9,
+     "cut": 9,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "qwen/qwen3.7-flash@think-off": {
+   "model": "qwen/qwen3.7-flash",
+   "extra_body": {
+    "reasoning": {
+     "enabled": false
+    }
+   },
+   "price_in_per_m": 0.03,
+   "price_out_per_m": 0.13,
+   "context_length": 1000000,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 287.8,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 3.969e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 5.124e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 89,
+     "n": 100,
+     "usd_per_task": 1.654e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 89,
+     "n": 100,
+     "usd_per_task": 6.721e-05,
+     "empty": 0,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "qwen/qwen3.8-flash": {
+   "model": "qwen/qwen3.8-flash",
+   "extra_body": {},
+   "price_in_per_m": 0.15,
+   "price_out_per_m": 0.47,
+   "context_length": 1000000,
+   "supports_vision": true,
+   "mean_thinking_tokens": 346.5,
+   "mean_output_tokens": 389.7,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 99,
+     "n": 100,
+     "usd_per_task": 0.00018877,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 96,
+     "n": 100,
+     "usd_per_task": 0.00014024,
+     "empty": 2,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 91,
+     "n": 100,
+     "usd_per_task": 0.00020253,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 84,
+     "n": 100,
+     "usd_per_task": 0.00035754,
+     "empty": 10,
+     "cut": 10,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "stepfun/step-3.5-flash": {
+   "model": "stepfun/step-3.5-flash",
+   "extra_body": {},
+   "price_in_per_m": 0.1,
+   "price_out_per_m": 0.3,
+   "context_length": 262144,
+   "supports_vision": false,
+   "mean_thinking_tokens": 491.0,
+   "mean_output_tokens": 970.6,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 0.00034834,
+     "empty": 8,
+     "cut": 8,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 94,
+     "n": 100,
+     "usd_per_task": 0.00021475,
+     "empty": 4,
+     "cut": 4,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 84,
+     "n": 100,
+     "usd_per_task": 0.00029866,
+     "empty": 3,
+     "cut": 3,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 79,
+     "n": 100,
+     "usd_per_task": 0.00038527,
+     "empty": 13,
+     "cut": 13,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "tencent/hy4@think-off": {
+   "model": "tencent/hy4",
+   "extra_body": {
+    "reasoning": {
+     "enabled": false
+    }
+   },
+   "price_in_per_m": 0.417,
+   "price_out_per_m": 1.25,
+   "context_length": 1048576,
+   "supports_vision": true,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 109.8,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 0.00017575,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 0.00018295,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 85,
+     "n": 100,
+     "usd_per_task": 0.00019482,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 91,
+     "n": 100,
+     "usd_per_task": 0.00033396,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "upstage/solar-mini4": {
+   "model": "upstage/solar-mini4",
+   "extra_body": {},
+   "price_in_per_m": 0.05,
+   "price_out_per_m": 0.2,
+   "context_length": 524288,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 98.0,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 93,
+     "n": 100,
+     "usd_per_task": 5.006e-05,
+     "empty": 0,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 96,
+     "n": 100,
+     "usd_per_task": 1.673e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": 95,
+     "fresh_n": 100,
+     "fresh_usd_per_task": 1.742e-05
+    },
+    "scifact_claims": {
+     "right": 73,
+     "n": 100,
+     "usd_per_task": 2.84e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 82,
+     "n": 100,
+     "usd_per_task": 3.276e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "upstage/solar-pro4": {
+   "model": "upstage/solar-pro4",
+   "extra_body": {},
+   "price_in_per_m": 0.15,
+   "price_out_per_m": 0.6,
+   "context_length": 524288,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 136.8,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 0.00012882,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 0.00010493,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 87,
+     "n": 100,
+     "usd_per_task": 8.387e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 88,
+     "n": 100,
+     "usd_per_task": 0.00015784,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "xiaomi/mimo-v2.6-flash": {
+   "model": "xiaomi/mimo-v2.6-flash",
+   "extra_body": {},
+   "price_in_per_m": 0.14,
+   "price_out_per_m": 0.28,
+   "context_length": 1050000,
+   "supports_vision": true,
+   "mean_thinking_tokens": 102.0,
+   "mean_output_tokens": 216.7,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 96,
+     "n": 100,
+     "usd_per_task": 6.547e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 7.185e-05,
+     "empty": 1,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 91,
+     "n": 100,
+     "usd_per_task": 9.499e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 88,
+     "n": 100,
+     "usd_per_task": 0.00011672,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "z-ai/glm-4.7-flash": {
+   "model": "z-ai/glm-4.7-flash",
+   "extra_body": {},
+   "price_in_per_m": 0.061,
+   "price_out_per_m": 0.4,
+   "context_length": 200000,
+   "supports_vision": false,
+   "mean_thinking_tokens": 467.7,
+   "mean_output_tokens": 928.5,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 0.00037095,
+     "empty": 6,
+     "cut": 6,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 93,
+     "n": 100,
+     "usd_per_task": 0.00031933,
+     "empty": 5,
+     "cut": 5,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 86,
+     "n": 100,
+     "usd_per_task": 0.00035643,
+     "empty": 3,
+     "cut": 3,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 82,
+     "n": 100,
+     "usd_per_task": 0.00048781,
+     "empty": 10,
+     "cut": 10,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "z-ai/glm-4.7-flash@think-off": {
+   "model": "z-ai/glm-4.7-flash",
+   "extra_body": {
+    "reasoning": {
+     "enabled": false
+    }
+   },
+   "price_in_per_m": 0.061,
+   "price_out_per_m": 0.4,
+   "context_length": 200000,
+   "supports_vision": false,
+   "mean_thinking_tokens": 0.0,
+   "mean_output_tokens": 121.2,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 91,
+     "n": 100,
+     "usd_per_task": 6.454e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 94,
+     "n": 100,
+     "usd_per_task": 4.712e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 77,
+     "n": 100,
+     "usd_per_task": 3.342e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 78,
+     "n": 100,
+     "usd_per_task": 9.766e-05,
+     "empty": 0,
+     "cut": 1,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  },
+  "z-ai/glm-5.3-flash": {
+   "model": "z-ai/glm-5.3-flash",
+   "extra_body": {},
+   "price_in_per_m": 0.15,
+   "price_out_per_m": 0.5,
+   "context_length": 1048576,
+   "supports_vision": true,
+   "mean_thinking_tokens": 192.2,
+   "mean_output_tokens": 267.0,
+   "kinds": {
+    "gsm8k_math": {
+     "right": 98,
+     "n": 100,
+     "usd_per_task": 7.017e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "arc_reasoning": {
+     "right": 97,
+     "n": 100,
+     "usd_per_task": 9.75e-05,
+     "empty": 2,
+     "cut": 2,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "scifact_claims": {
+     "right": 92,
+     "n": 100,
+     "usd_per_task": 9.961e-05,
+     "empty": 0,
+     "cut": 0,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    },
+    "mmlu_knowledge": {
+     "right": 87,
+     "n": 100,
+     "usd_per_task": 0.00016843,
+     "empty": 4,
+     "cut": 4,
+     "fresh_right": null,
+     "fresh_n": null,
+     "fresh_usd_per_task": null
+    }
+   }
+  }
+ }
+}

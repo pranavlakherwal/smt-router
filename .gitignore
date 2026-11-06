@@ -20,6 +20,11 @@ env/
 *.swo
 *~
 
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+
 # OS
 .DS_Store
 Thumbs.db
@@ -30,7 +35,17 @@ Thumbs.db
 *.pt
 *.pth
 *.bin
-data/
+# data/ is ignored except the small files the engine needs to run as published.
+data/*
+!data/seed_weights.json
+!data/measured_capability.json
+!data/outcomes_*.json
+!data/suspect_keys_*.json
+
+# Local state and tool caches
+.smt_router/
+.pytest_cache/
+.ruff_cache/
 
 # Logs
 *.log

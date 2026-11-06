@@ -1,10 +1,16 @@
 """Phi function evaluators for the S(M,T) router.
 
 16 phi functions, each producing a 0-1 score for (endpoint, task) pairs.
-- 8 data-grounded: query normalized_scores.db for empirical scores
+- 8 data-grounded: query the benchmark database for empirical scores
 - 8 runtime/stub: return prior-based estimates or runtime metrics
 
-Imports PHI_DATA_RULES from data_ingester.phi_mapper to avoid duplication.
+Where each score comes from is written on it (PhiScore.source):
+  measured  the pass rate in data/measured_capability.json (phi_4 only, LLM endpoints)
+  data      the benchmark database, when a copy is present (it is not shipped)
+  computed  worked out from the task and the endpoint
+  runtime   the endpoint's state right now
+  prior     a fixed default, used when there is nothing better
+PhiEvaluatorEngine.data_sources() says which of these are in play.
 """
 
 import logging
@@ -14,15 +20,9 @@ from typing import Dict, List, Optional
 
 from router.config import NORMALIZED_DB_PATH
 from router.models import Endpoint, EndpointType, PhiScore, Task
+from router.phi_mapper import PHI_DATA_RULES
 
 logger = logging.getLogger(__name__)
-
-# Import phi data mapping rules from the data ingester
-try:
-    from router.phi_mapper import PHI_DATA_RULES
-except ImportError:
-    logger.warning("Could not import PHI_DATA_RULES, using empty rules")
-    PHI_DATA_RULES = {}
 
 # Phi function names for reference
 PHI_NAMES = {
@@ -109,10 +109,24 @@ MODEL_ID_ALIASES: Dict[str, List[str]] = {
 class PhiEvaluatorEngine:
     """Evaluates all 16 phi functions for an (endpoint, task) pair."""
 
-    def __init__(self, db_path: Optional[Path] = None):
+    def __init__(self, db_path: Optional[Path] = None, measured=None):
         self.db_path = db_path or NORMALIZED_DB_PATH
+        # A router.measured.MeasuredTable, or None.
+        self.measured = measured
+        self._kind: Optional[str] = None
         self._conn: Optional[sqlite3.Connection] = None
         self._model_score_cache: Dict[str, Dict[str, float]] = {}
+
+    def data_sources(self) -> Dict[str, str]:
+        """Which capability inputs this engine has. Read it before trusting a score."""
+        return {
+            "measured_table": f"as of {self.measured.as_of}, {len(self.measured.entries)} settings"
+            if self.measured
+            else "none",
+            "benchmark_database": str(self.db_path)
+            if self.db_path.exists()
+            else "not present (not shipped); data-grounded phi functions use priors",
+        }
 
     def _get_conn(self) -> Optional[sqlite3.Connection]:
         """Lazy connection to normalized_scores DB."""
@@ -124,8 +138,12 @@ class PhiEvaluatorEngine:
                 logger.warning(f"Could not connect to DB: {e}")
         return self._conn
 
-    def evaluate_all(self, task: Task, endpoint: Endpoint) -> List[PhiScore]:
-        """Evaluate all 16 phi functions and return scores."""
+    def evaluate_all(self, task: Task, endpoint: Endpoint, kind: Optional[str] = None) -> List[PhiScore]:
+        """Evaluate all 16 phi functions and return scores.
+
+        `kind` is the measured kind of job the task resolved to, if any.
+        """
+        self._kind = kind
         scores = []
         for i in range(1, 17):
             phi_id = f"phi_{i}"
@@ -197,9 +215,28 @@ class PhiEvaluatorEngine:
             source=db_score["source"],
         )
 
+    def _measured_rate(self, endpoint: Endpoint) -> Optional[Dict]:
+        """The measured pass rate of an LLM endpoint on the task's kind, or None."""
+        kind = getattr(self, "_kind", None)
+        if not (self.measured and kind) or endpoint.endpoint_type != EndpointType.LLM:
+            return None
+        row = self.measured.row(endpoint.id, kind)
+        if not row or not row.get("n"):
+            return None
+        n = row["n"]
+        return {
+            "score": round(row["right"] / n, 4),
+            "confidence": round(min(n / (n + 10), 0.95), 3),
+            "source": "measured",
+        }
+
     def _eval_phi_4(self, task: Task, endpoint: Endpoint) -> PhiScore:
-        """performance_predictor: Expected quality per model per task type."""
-        score = self._query_model_phi_score(endpoint, "phi_4", task)
+        """performance_predictor: Expected quality per model per task type.
+
+        The measured pass rate on the task's kind when there is one, else the benchmark
+        database, else a prior.
+        """
+        score = self._measured_rate(endpoint) or self._query_model_phi_score(endpoint, "phi_4", task)
         return PhiScore(
             phi_id="phi_4",
             name="performance_predictor",
@@ -232,7 +269,7 @@ class PhiEvaluatorEngine:
     def _eval_phi_7(self, task: Task, endpoint: Endpoint) -> PhiScore:
         """uncertainty_score: Epistemic uncertainty about model capability."""
         # Inverse of data coverage: more data = lower uncertainty = higher score
-        phi4_score = self._query_model_phi_score(endpoint, "phi_4", task)
+        phi4_score = self._measured_rate(endpoint) or self._query_model_phi_score(endpoint, "phi_4", task)
         # High confidence in phi_4 means low uncertainty (good)
         uncertainty = 1.0 - phi4_score["confidence"]
         # Invert: lower uncertainty = higher phi_7 score

@@ -86,3 +86,48 @@ resolution:    arXiv v2 pass: rewrite the "Bonus: Novelty Falsification" paragra
                session's file scope.
 status:        OPEN
 ```
+
+```
+claim_id:      SMT-ERR-004
+attack:        The production section reports a cost reduction with no measure of answer
+               quality, on capability numbers that were not measured. sections/07d reports
+               1,580 shadow decisions and a cost cut, with 68.7% of decisions routed to free
+               endpoints. Quality was never measured in that replay. On 6 November 2026 the
+               router's model list held 373 listed models: 35 with their own leaderboard row,
+               56 with a sibling's row matched by name, 282 with a guess from price. One model
+               rated 0.24 for maths from its price scored 99 of 100. The free endpoint the
+               router picked on 244 of the 400 November tasks had been withdrawn by the
+               provider.
+evidence:      docs/ROUTE_OPTIONS_2026-11.md finding 7; README.md, section "What we can say
+               about reliability (6 November 2026)", rows of 4, 5 and 6 November 2026;
+               data/measured_capability.json. Paper claim site:
+               sections/07d_production_validation.tex, the cost table and the free-tier item.
+claim_status:  weakened (the cost numbers stand as a replay of what the router would have
+               spent; they say nothing about whether the routed answers were right)
+resolution:    v1.5 pass: state in 07d that quality was not measured; report the capability
+               sources by count; add the November measurement as the first quality reading.
+status:        OPEN
+```
+
+```
+claim_id:      SMT-ERR-005
+attack:        The score selects the most accurate endpoint, not the cheapest endpoint that
+               does the job. In the published code the exponential factor is computed from
+               score confidence, not from cost (router/scorer.py, score_endpoint), so cost
+               enters only through phi_14, a function with five price tiers. Given measured
+               pass rates for 66 settings, 61 of 66 fall in one tier, so cost cannot separate
+               them and accuracy decides. On the exam task set the score picks a
+               setting at $0.097 per 1,000 tasks for 94 right; the cheapest setting that
+               cleared 90 twice costs $0.031. On maths, five settings tie on the top score.
+evidence:      docs/ROUTE_OPTIONS_2026-11.md Table 6, printed by
+               `python -m router report --only t6`; router/phi_evaluators.py _eval_phi_14.
+               The reading is in-sample: the pick is scored on the tasks that set its rate.
+               Paper claim sites: sections/03_framework.tex, the phi_14 row and the cost
+               factor paragraph; README.md, "Cost adjusts for what the task is worth".
+claim_status:  weakened (the form can express a cost preference; as parameterized it does
+               not act on one among low-cost endpoints)
+resolution:    Code: an accuracy bar is now a gate and selection is by measured cost
+               (router/gates.py, router/engine.py, 6 November 2026). v1.5 pass: describe the
+               bar as a gate in Section 3 and report Table 6.
+status:        OPEN
+```

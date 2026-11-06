@@ -3,18 +3,20 @@
 Gates are hard constraints that filter out endpoints before phi scoring.
 If any gate returns False, the endpoint is excluded (Product_j gate_j = 0).
 
-Five gates:
+Six gates:
 1. context_window: Does the endpoint support the required context length?
 2. format_support: Does the endpoint support required output format?
 3. availability: Is the endpoint currently available?
 4. budget: Does the endpoint fit within the cost budget?
 5. thinking_support: If task requires thinking, does endpoint support it?
+6. measured_bar: If the task sets an accuracy bar, has the endpoint cleared it twice on
+   measured tasks of that kind? An endpoint with no measurement fails: a bar asks for evidence.
 """
 
 import logging
-from typing import List
+from typing import List, Optional
 
-from router.models import Endpoint, GateResult, Task
+from router.models import Endpoint, EndpointType, GateResult, Task
 
 logger = logging.getLogger(__name__)
 
@@ -22,14 +24,20 @@ logger = logging.getLogger(__name__)
 class GateEvaluator:
     """Evaluates binary gates for endpoint filtering."""
 
-    def evaluate_all(self, task: Task, endpoint: Endpoint) -> List[GateResult]:
-        """Run all gates. Returns list of GateResult."""
+    def __init__(self, measured=None):
+        # A router.measured.MeasuredTable, or None. Without one, a task that sets a bar
+        # fails gate 6 for every endpoint.
+        self.measured = measured
+
+    def evaluate_all(self, task: Task, endpoint: Endpoint, kind: Optional[str] = None) -> List[GateResult]:
+        """Run all gates. `kind` is the measured kind of job the task resolved to, if any."""
         results = [
             self._gate_context_window(task, endpoint),
             self._gate_format_support(task, endpoint),
             self._gate_availability(task, endpoint),
             self._gate_budget(task, endpoint),
             self._gate_thinking_support(task, endpoint),
+            self._gate_measured_bar(task, endpoint, kind),
         ]
         return results
 
@@ -90,3 +98,16 @@ class GateEvaluator:
         passed = endpoint.supports_thinking
         reason = "" if passed else "Task requires thinking/CoT, endpoint lacks support"
         return GateResult(gate_name="thinking_support", passed=passed, reason=reason)
+
+    def _gate_measured_bar(self, task: Task, endpoint: Endpoint, kind: Optional[str]) -> GateResult:
+        """Gate 6: with a bar set, the endpoint must have cleared it twice on this kind of job."""
+        if task.bar is None:
+            return GateResult(gate_name="measured_bar", passed=True)
+        if self.measured is None:
+            return GateResult(gate_name="measured_bar", passed=False, reason="no measured table loaded")
+        if not kind:
+            return GateResult(gate_name="measured_bar", passed=False, reason="this kind of job was never measured")
+        if endpoint.endpoint_type != EndpointType.LLM:
+            return GateResult(gate_name="measured_bar", passed=False, reason="no measured pass rate for this endpoint")
+        passed, why = self.measured.status(endpoint.id, kind, task.bar)
+        return GateResult(gate_name="measured_bar", passed=passed, reason=why)

@@ -1,0 +1,21 @@
+[project]
+name = "smt-router"
+version = "0.2.0"
+description = "S(M,T): scoring AI endpoints. The paper, the routing engine, and a measured table of which cheap model does which job."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = ["pydantic>=2"]
+
+[project.optional-dependencies]
+# The learned bilinear scorer and its training and evaluation scripts (router/learned_phi.py,
+# train_bilinear.py, eval_bilinear.py, data_pipeline.py, leave_one_out.py).
+learned = ["torch", "sentence-transformers", "numpy", "pandas", "scipy"]
+dev = ["pytest>=7", "ruff>=0.5"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.setuptools]
+packages = ["router"]

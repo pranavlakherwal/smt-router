@@ -1,23 +1,46 @@
-"""Router configuration: endpoint definitions, seed weight loader, pipeline settings.
+"""Router configuration: paths, pipeline settings, the paper's example endpoints, weight loading.
 
-Loads seed weights from data/seed_weights.json and defines the available
-endpoints (LLMs, agents, scripts, MCP tools) the router can select from.
+Everything the engine reads at start sits inside this repository, under data/:
+  data/seed_weights.json         the seed weights of the sixteen phi functions
+  data/measured_capability.json  measured pass rates per model setting and kind of job
+
+Nothing is written to disk unless SMT_ROUTER_STATE_DIR is set. With it set, the decision log
+and the learned weights go to that folder.
 """
 
 import json
 import logging
+import os
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from router.models import Endpoint, EndpointType, TaskType
+from router.models import Endpoint, EndpointType
 
 logger = logging.getLogger(__name__)
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 SEED_WEIGHTS_PATH = DATA_DIR / "seed_weights.json"
-LEARNED_WEIGHTS_PATH = DATA_DIR / "learned_weights.json"
+# The benchmark database behind the paper's data-grounded phi functions (14.3M rows) is not
+# shipped. When this file is absent the engine says so and uses the measured table and priors.
 NORMALIZED_DB_PATH = DATA_DIR / "auto_search.db"
+
+
+def state_dir() -> Optional[Path]:
+    """Where the engine may write, or None. Read at call time so a test can set it."""
+    d = os.environ.get("SMT_ROUTER_STATE_DIR")
+    return Path(d) if d else None
+
+
+def learned_weights_path() -> Optional[Path]:
+    d = state_dir()
+    return d / "learned_weights.json" if d else None
+
+
+def decision_log_path() -> Optional[Path]:
+    d = state_dir()
+    return d / "routing_decisions.jsonl" if d else None
+
 
 # ---------------------------------------------------------------------------
 # Pipeline settings
@@ -27,12 +50,16 @@ PIPELINE = {
     "top_k": 3,
     "min_gate_pass": True,  # require all gates to pass
     "use_entropy_regularization": True,
-    "decision_log_path": str(DATA_DIR / "routing_decisions.jsonl"),
 }
 
 # ---------------------------------------------------------------------------
-# Endpoint definitions
+# The paper's example endpoints
 # ---------------------------------------------------------------------------
+# Typed by hand in mid 2025 for the paper's worked examples: seven LLMs with the prices of that
+# time, and the agents, scripts and tools of the author's own system as examples of endpoints
+# that are not LLMs. They are NOT in the default registry. The default registry is built from
+# data/measured_capability.json, which carries a date. Load these with
+# EndpointRegistry(include_paper_examples=True).
 
 LLM_ENDPOINTS: List[Endpoint] = [
     Endpoint(
@@ -189,7 +216,8 @@ MCP_ENDPOINTS: List[Endpoint] = [
     ),
 ]
 
-ALL_ENDPOINTS = LLM_ENDPOINTS + AGENT_ENDPOINTS + SCRIPT_ENDPOINTS + MCP_ENDPOINTS
+PAPER_EXAMPLE_ENDPOINTS = LLM_ENDPOINTS + AGENT_ENDPOINTS + SCRIPT_ENDPOINTS + MCP_ENDPOINTS
+ALL_ENDPOINTS = PAPER_EXAMPLE_ENDPOINTS  # the old name, kept for callers of the paper-era code
 
 # ---------------------------------------------------------------------------
 # Model ID aliases (map common names to our endpoint IDs)
@@ -229,52 +257,52 @@ MODEL_ALIASES: Dict[str, str] = {
 
 
 def load_seed_weights() -> Dict[str, Any]:
-    """Load seed weights from data/seed_weights.json."""
+    """Load the seed weights from data/seed_weights.json. A missing file is an error."""
     if not SEED_WEIGHTS_PATH.exists():
-        logger.warning(f"Seed weights not found at {SEED_WEIGHTS_PATH}, using uniform")
-        return _uniform_weights()
-
+        raise FileNotFoundError(
+            f"Seed weights not found at {SEED_WEIGHTS_PATH}. The file ships with the repository; "
+            "restore it, or pass weights from uniform_weights() yourself if you mean to."
+        )
     with open(SEED_WEIGHTS_PATH) as f:
         data = json.load(f)
-
+    if len(data.get("weights", {})) != 16:
+        raise ValueError(f"{SEED_WEIGHTS_PATH} holds {len(data.get('weights', {}))} weights, expected 16")
     logger.info(f"Loaded seed weights v={data.get('version', 'unknown')}")
     return data
 
 
 def load_learned_weights() -> Dict[str, float]:
-    """Load learned weights if they exist, otherwise return seed weights."""
-    if LEARNED_WEIGHTS_PATH.exists():
-        with open(LEARNED_WEIGHTS_PATH) as f:
+    """Learned weights from the state folder when there are any, otherwise the seed weights."""
+    path = learned_weights_path()
+    if path and path.exists():
+        with open(path) as f:
             data = json.load(f)
         logger.info(f"Loaded learned weights (n={data.get('decision_count', 0)} decisions)")
         return data.get("weights", {})
-
-    seed = load_seed_weights()
-    return seed.get("weights", _uniform_weights()["weights"])
+    return dict(load_seed_weights()["weights"])
 
 
-def save_learned_weights(weights: Dict[str, float], decision_count: int):
-    """Persist learned weights to disk."""
-    data = {
-        "weights": weights,
-        "decision_count": decision_count,
-        "version": "learned",
-    }
-    with open(LEARNED_WEIGHTS_PATH, "w") as f:
+def save_learned_weights(weights: Dict[str, float], decision_count: int) -> Optional[Path]:
+    """Persist learned weights to the state folder. Does nothing when no state folder is set."""
+    path = learned_weights_path()
+    if path is None:
+        return None
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = {"weights": weights, "decision_count": decision_count, "version": "learned"}
+    with open(path, "w") as f:
         json.dump(data, f, indent=2)
-    logger.info(f"Saved learned weights (n={decision_count})")
+    logger.info(f"Saved learned weights (n={decision_count}) to {path}")
+    return path
 
 
-def _uniform_weights() -> Dict[str, Any]:
-    """Fallback: uniform weights across 16 phi functions."""
+def uniform_weights() -> Dict[str, Any]:
+    """Uniform weights across the sixteen phi functions. Never used unless a caller asks for it."""
+    from router.models import TaskType
+
     w = 1.0 / 16
     return {
-        "version": "uniform-fallback",
+        "version": "uniform",
         "weights": {f"phi_{i}": w for i in range(1, 17)},
         "beta": {"task_conditional": {t.value: 0.5 for t in TaskType}},
-        "entropy_regularization": {
-            "initial_lambda": 0.5,
-            "decay_rate": 0.995,
-            "min_lambda": 0.01,
-        },
+        "entropy_regularization": {"initial_lambda": 0.5, "decay_rate": 0.995, "min_lambda": 0.01},
     }

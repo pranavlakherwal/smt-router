@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # ---------------------------------------------------------------------------
 # Enums
@@ -45,11 +45,25 @@ class TaskType(str, Enum):
 
 
 class Task(BaseModel):
-    """A user request decomposed into a routable task."""
+    """A user request decomposed into a routable task.
+
+    The text goes in `query`. An unknown field is an error, so `Task(prompt=...)` fails loudly
+    and never routes an empty query.
+
+    `kind` and `bar` ask for the cheapest endpoint that does the job:
+      kind  a measured kind of job: maths, science, claims or exam
+      bar   right answers wanted out of 100, for example 90, 95 or 98
+    With a bar set, an endpoint must have cleared it twice on measured tasks of that kind,
+    and the cheapest such endpoint is selected.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     id: str = ""
     query: str = ""
     task_type: TaskType = TaskType.GENERAL
+    kind: Optional[str] = None
+    bar: Optional[int] = Field(default=None, ge=1, le=100)
     complexity: float = 0.5  # 0-1 estimated complexity
     context_length: int = 0  # token count of input context
     requires_thinking: bool = False
@@ -106,6 +120,9 @@ class ScoredEndpoint(BaseModel):
     temperature_factor: float = 1.0  # e^(-beta * H_i)
     entropy_bonus: float = 0.0  # lambda * H(pi) contribution
     final_score: float = 0.0  # S(M,T) complete
+    # The measured row for this endpoint on the task's kind, when there is one:
+    # right, n, fresh_right, fresh_n, usd_per_task.
+    measured: Dict[str, Any] = Field(default_factory=dict)
 
 
 class RoutingDecision(BaseModel):
@@ -116,6 +133,10 @@ class RoutingDecision(BaseModel):
     selected: Optional[ScoredEndpoint] = None
     top_k: List[ScoredEndpoint] = Field(default_factory=list)
     decision_number: int = 0  # for Robbins-Monro step tracking
+    # How the endpoint was chosen: "score" (highest S(M,T)) or "cheapest_at_bar".
+    rule: str = "score"
+    # Why nothing was selected, when nothing was.
+    reason: str = ""
     timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
     metadata: Dict[str, Any] = Field(default_factory=dict)
 

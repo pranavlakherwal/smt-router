@@ -1,0 +1,171 @@
+{
+ "as_of": "2026-11-06",
+ "rule": "at least four of the five strongest settings on a kind give the same answer, and the answer key says otherwise",
+ "note": "The answers are letters, labels or numbers. Open the task in the public data set by its id to read the question.",
+ "kinds": {
+  "gsm8k_math": {
+   "strongest_five": [
+    "inception/mercury-2.5",
+    "inclusionai/ling-3.0-flash",
+    "inclusionai/ling-3.1-flash",
+    "qwen/qwen3.7-flash",
+    "qwen/qwen3.8-flash"
+   ],
+   "best_score": 99,
+   "suspect": []
+  },
+  "arc_reasoning": {
+   "strongest_five": [
+    "deepseek/deepseek-v4.1-flash",
+    "google/gemini-3.7-flash",
+    "google/gemma-4-26b-a4b-it",
+    "google/gemma-4-31b-it",
+    "inception/mercury-2.5"
+   ],
+   "best_score": 98,
+   "suspect": [
+    {
+     "task_id": "arc-931",
+     "key": "B",
+     "strongest_answer": "C",
+     "strongest_agreeing": 5,
+     "settings_giving_that_answer": 65,
+     "settings_matching_the_key": 0,
+     "settings": 66
+    }
+   ]
+  },
+  "scifact_claims": {
+   "strongest_five": [
+    "google/gemma-4-31b-it",
+    "google/gemini-3.7-flash",
+    "inclusionai/ling-3.1-flash",
+    "qwen/qwen3.7-flash",
+    "z-ai/glm-5.3-flash"
+   ],
+   "best_score": 94,
+   "suspect": [
+    {
+     "task_id": "scifact-sup-024",
+     "key": "SUPPORT",
+     "strongest_answer": "REFUTE",
+     "strongest_agreeing": 5,
+     "settings_giving_that_answer": 50,
+     "settings_matching_the_key": 8,
+     "settings": 66
+    },
+    {
+     "task_id": "scifact-sup-028",
+     "key": "SUPPORT",
+     "strongest_answer": "NOINFO",
+     "strongest_agreeing": 4,
+     "settings_giving_that_answer": 33,
+     "settings_matching_the_key": 31,
+     "settings": 66
+    },
+    {
+     "task_id": "scifact-sup-034",
+     "key": "SUPPORT",
+     "strongest_answer": "NOINFO",
+     "strongest_agreeing": 5,
+     "settings_giving_that_answer": 64,
+     "settings_matching_the_key": 2,
+     "settings": 66
+    },
+    {
+     "task_id": "scifact-noi-031",
+     "key": "NOINFO",
+     "strongest_answer": "REFUTE",
+     "strongest_agreeing": 5,
+     "settings_giving_that_answer": 50,
+     "settings_matching_the_key": 0,
+     "settings": 66
+    },
+    {
+     "task_id": "scifact-noi-034",
+     "key": "NOINFO",
+     "strongest_answer": "SUPPORT",
+     "strongest_agreeing": 5,
+     "settings_giving_that_answer": 66,
+     "settings_matching_the_key": 0,
+     "settings": 66
+    },
+    {
+     "task_id": "scifact-ref-036",
+     "key": "REFUTE",
+     "strongest_answer": "SUPPORT",
+     "strongest_agreeing": 4,
+     "settings_giving_that_answer": 30,
+     "settings_matching_the_key": 18,
+     "settings": 66
+    },
+    {
+     "task_id": "scifact-ref-037",
+     "key": "REFUTE",
+     "strongest_answer": "NOINFO",
+     "strongest_agreeing": 4,
+     "settings_giving_that_answer": 47,
+     "settings_matching_the_key": 13,
+     "settings": 66
+    }
+   ]
+  },
+  "mmlu_knowledge": {
+   "strongest_five": [
+    "openai/gpt-6-luna",
+    "google/gemini-3.7-flash",
+    "openai/gpt-5.6-luna",
+    "google/gemma-4-31b-it",
+    "tencent/hy4@think-off"
+   ],
+   "best_score": 94,
+   "suspect": [
+    {
+     "task_id": "mmlu-3299",
+     "key": "D",
+     "strongest_answer": "C",
+     "strongest_agreeing": 5,
+     "settings_giving_that_answer": 61,
+     "settings_matching_the_key": 0,
+     "settings": 66
+    },
+    {
+     "task_id": "mmlu-10177",
+     "key": "C",
+     "strongest_answer": "A",
+     "strongest_agreeing": 4,
+     "settings_giving_that_answer": 60,
+     "settings_matching_the_key": 2,
+     "settings": 66
+    },
+    {
+     "task_id": "mmlu-11334",
+     "key": "C",
+     "strongest_answer": "D",
+     "strongest_agreeing": 5,
+     "settings_giving_that_answer": 57,
+     "settings_matching_the_key": 0,
+     "settings": 66
+    },
+    {
+     "task_id": "mmlu-3440",
+     "key": "D",
+     "strongest_answer": "B",
+     "strongest_agreeing": 5,
+     "settings_giving_that_answer": 54,
+     "settings_matching_the_key": 2,
+     "settings": 66
+    },
+    {
+     "task_id": "mmlu-8260",
+     "key": "B",
+     "strongest_answer": "C",
+     "strongest_agreeing": 4,
+     "settings_giving_that_answer": 45,
+     "settings_matching_the_key": 14,
+     "settings": 66
+    }
+   ]
+  }
+ }
+}

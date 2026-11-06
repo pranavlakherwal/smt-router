@@ -1,0 +1,186 @@
+{
+ "version": "v0.1-seed",
+ "equation": "S(M,T) = [Product_j gate_j(M,T)] * [Sum_i w_i * phi_i(M,T)] * e^(-beta * H_i)",
+ "weights": {
+  "phi_1": 0.070556,
+  "phi_2": 0.035278,
+  "phi_3": 0.105834,
+  "phi_4": 0.176391,
+  "phi_5": 0.008141,
+  "phi_6": 0.141113,
+  "phi_7": 0.016282,
+  "phi_8": 0.123474,
+  "phi_9": 0.008141,
+  "phi_10": 0.008141,
+  "phi_11": 0.008141,
+  "phi_12": 0.016282,
+  "phi_13": 0.105834,
+  "phi_14": 0.088195,
+  "phi_15": 0.017639,
+  "phi_16": 0.070556
+ },
+ "weight_metadata": {
+  "phi_1": {
+   "name": "constraint_filter",
+   "literature_prior": 2.0,
+   "data_quality": "high",
+   "record_count": 4200,
+   "unique_models": 350
+  },
+  "phi_2": {
+   "name": "domain_classifier",
+   "literature_prior": 1.0,
+   "data_quality": "high",
+   "record_count": 2042817,
+   "unique_models": 14926
+  },
+  "phi_3": {
+   "name": "complexity_estimator",
+   "literature_prior": 3.0,
+   "data_quality": "high",
+   "record_count": 2042817,
+   "unique_models": 14926
+  },
+  "phi_4": {
+   "name": "performance_predictor",
+   "literature_prior": 5.0,
+   "data_quality": "high",
+   "record_count": 2759877,
+   "unique_models": 15176
+  },
+  "phi_5": {
+   "name": "context_fitness",
+   "literature_prior": 0.5,
+   "data_quality": "none",
+   "record_count": 0,
+   "unique_models": 0
+  },
+  "phi_6": {
+   "name": "historical_success",
+   "literature_prior": 4.0,
+   "data_quality": "high",
+   "record_count": 2307010,
+   "unique_models": 14928
+  },
+  "phi_7": {
+   "name": "uncertainty_score",
+   "literature_prior": 1.0,
+   "data_quality": "none",
+   "record_count": 0,
+   "unique_models": 0
+  },
+  "phi_8": {
+   "name": "cascade_position",
+   "literature_prior": 3.5,
+   "data_quality": "high",
+   "record_count": 2311210,
+   "unique_models": 15278
+  },
+  "phi_9": {
+   "name": "load_availability",
+   "literature_prior": 0.5,
+   "data_quality": "none",
+   "record_count": 0,
+   "unique_models": 0
+  },
+  "phi_10": {
+   "name": "cross_node_capability",
+   "literature_prior": 0.5,
+   "data_quality": "none",
+   "record_count": 0,
+   "unique_models": 0
+  },
+  "phi_11": {
+   "name": "calibration_quality",
+   "literature_prior": 0.5,
+   "data_quality": "none",
+   "record_count": 0,
+   "unique_models": 0
+  },
+  "phi_12": {
+   "name": "output_structure_compliance",
+   "literature_prior": 1.0,
+   "data_quality": "none",
+   "record_count": 0,
+   "unique_models": 0
+  },
+  "phi_13": {
+   "name": "reasoning_depth",
+   "literature_prior": 3.0,
+   "data_quality": "high",
+   "record_count": 2003949,
+   "unique_models": 12434
+  },
+  "phi_14": {
+   "name": "cost_efficiency_ratio",
+   "literature_prior": 2.5,
+   "data_quality": "high",
+   "record_count": 719702,
+   "unique_models": 576
+  },
+  "phi_15": {
+   "name": "context_window_utilization",
+   "literature_prior": 0.5,
+   "data_quality": "high",
+   "record_count": 1400,
+   "unique_models": 350
+  },
+  "phi_16": {
+   "name": "instruction_adherence",
+   "literature_prior": 2.0,
+   "data_quality": "high",
+   "record_count": 113853,
+   "unique_models": 5795
+  }
+ },
+ "beta": {
+  "schedule": "logarithmic",
+  "formula": "beta(t) = c * log(1 + t)",
+  "c": 0.1,
+  "initial_beta": 0.1,
+  "task_conditional": {
+   "general": 0.5,
+   "coding": 0.3,
+   "math": 0.4,
+   "reasoning": 0.4,
+   "knowledge": 0.5,
+   "instruction_following": 0.3,
+   "cost": 0.6,
+   "metadata": 0.8,
+   "safety": 0.2,
+   "long_context": 0.2
+  },
+  "note": "From convergence_hajek + adversarial_fix_temperature proofs"
+ },
+ "entropy_regularization": {
+  "formula": "S_reg = S(M,T) + lambda * H(pi)",
+  "initial_lambda": 0.5,
+  "decay": "exponential",
+  "decay_rate": 0.995,
+  "min_lambda": 0.01,
+  "adaptation": "SAC-style automatic tuning",
+  "target_entropy": -0.5,
+  "note": "From entropy_lambda_schedule proof. High lambda initially, decay as confidence grows."
+ },
+ "learning_config": {
+  "method": "robbins_monro",
+  "step_size": "a_n = 1 / (n + 1)",
+  "convergence": "hajek (logarithmic cooling)",
+  "estimated_decisions_to_95pct": 10000,
+  "note": "From regret_bounds proof (verified 90%)"
+ },
+ "data_sources": {
+  "total_records": 14306835,
+  "total_unique_models": 34,
+  "sources": [
+   "alpaca_eval",
+   "routereval",
+   "epoch_ai",
+   "openrouter",
+   "swebench",
+   "routellm",
+   "open_llm_leaderboard"
+  ]
+ },
+ "note": "Seed weights, version v0.1-seed, file dated 19 March 2026. The public copy leaves out the model_rankings block, which the scorer does not read."
+}

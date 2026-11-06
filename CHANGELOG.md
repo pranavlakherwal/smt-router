@@ -2,6 +2,41 @@
 
 All notable changes to S(M,T) will be documented in this file.
 
+## [code 0.2.0] - 2026-11-06
+
+### The engine runs as published, and it carries a measured table
+
+The paper is unchanged at v1.4. This release is code, data and a research note.
+
+**Why:** on 4 November 2026 we ran the published engine as a stranger would. It could not find
+its seed weights or its phi rules, because `.gitignore` had kept the whole `data/` folder out of
+the repository. It printed two warnings and routed anyway. It also routed an empty query. On 5
+and 6 November we measured 56 models in 66 settings on 400 tasks and found that the capability
+numbers our own router used were mostly leaderboard rows and guesses from price.
+
+**What changed:**
+- `data/measured_capability.json`: right answers out of 100 per setting and kind of job, with
+  measured cost, list price and date. `data/outcomes_2026-11-06.json` holds right or wrong for
+  every setting on every task. `data/suspect_keys_2026-11-06.json` lists the answer keys the
+  strongest settings disagree with.
+- `router/measured.py`: the rule. The option at a bar is the cheapest setting that reached the
+  bar on 100 tasks and again on 100 fresh ones.
+- `router/gates.py`: a sixth gate, `measured_bar`. With `Task(bar=90, kind="maths")` an endpoint
+  passes only if it cleared the bar twice, and the cheapest that passes is selected.
+- `router/phi_evaluators.py`: phi_4 reads the measured pass rate. Every score names its source.
+- `python -m router options | route | table | report`, and `examples/route_one.py`.
+- Seed weights and phi rules now ship. A missing file is an error, not a silent fallback. An
+  empty query and a misnamed field are errors. Nothing is written unless `SMT_ROUTER_STATE_DIR`
+  is set.
+- The default registry is the 66 measured settings. The paper's hand-typed endpoints of mid 2025
+  load only with `EndpointRegistry(include_paper_examples=True)`.
+- 34 tests, `pyproject.toml`, `uv.lock`, `ruff.toml`, and a manual-only CI workflow.
+- `docs/ROUTE_OPTIONS_2026-11.md`: the method, eight tables and the limits.
+- `paper/ERRATA_QUEUE.md`: SMT-ERR-004 and SMT-ERR-005, both OPEN.
+
+**What it does not change:** the learned bilinear scorer has not been run on the November tasks.
+Nothing here has been checked by an outside party.
+
 ## [v1.4] - 2026-06-11
 
 ### Discrete-choice attribution correction + full May-31 section restructure
