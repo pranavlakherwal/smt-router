@@ -10,7 +10,7 @@ S(M,T) = [Gates] × [Compatibility] × [Cost Penalty]
 
 That's it. Gates filter out endpoints that can't handle the task. Compatibility measures fit across 16 learned dimensions. Cost adjusts for what the task is worth. The highest-scoring endpoint wins. Set an accuracy bar and the bar becomes a gate: the cheapest endpoint that cleared it wins.
 
-**[Download the paper (PDF)](SMT_Router_Paper_v1.4.pdf)**
+**[Download the paper (PDF, v1.5, 7 November 2026)](SMT_Router_Paper_v1.5.pdf)**. Previous: [v1.4, June 2026](SMT_Router_Paper_v1.4.pdf).
 
 ## Try it in a minute
 
@@ -55,9 +55,9 @@ The method, every table and the limits are in [docs/ROUTE_OPTIONS_2026-11.md](do
 
 The world is headed toward spending billions on AI tokens every year. Most routing today is manual or nonexistent. Every query gets sent to the same model, regardless of difficulty. A formatting task and a complex reasoning problem get the same $0.06 API call.
 
-S(M,T) routes intelligently. In the June 2026 benchmark replay it retained 94.35% of best-model quality at half the cost (offline, public benchmarks). What we have measured on live models is narrower, and it is dated in the sections above and below.
+S(M,T) routes intelligently. In the paper's benchmark replay it retained 94.35% of best-model quality at half the cost (offline, public benchmarks). Routing of this kind can cut AI spend by up to about 80% while keeping most of the quality. That 80% is arithmetic from the same RouteLLM table (paper v1.5, Section 8.5.2, Table 9), not a measurement of spend. Route 20% of queries to the strong model and 80% to the cheap one, and the learned router kept 89.02% of the strong model's quality. At 50% it kept 94.35%. Both numbers date from the paper's first version, 25 March 2026; the arithmetic was confirmed run on 7 November 2026. On live models in November 2026 the picture is narrower; it is dated in the sections above and below.
 
-## Key Results (paper v1.4, June 2026; offline public benchmarks, not re-run since)
+## Key Results (paper v1.5, 7 November 2026; offline public benchmarks, first reported 25 March 2026, not re-run since)
 
 | Benchmark | Result |
 |-----------|--------|
@@ -79,7 +79,7 @@ S(M,T) routes intelligently. In the June 2026 benchmark replay it retained 94.35
 
 ## Paper
 
-The paper (v1.4, June 2026) covers:
+The paper (v1.5, 7 November 2026) covers:
 
 - The S(M,T) equation and why it's designed this way
 - The measurement gap: why hand-designed scoring functions fail structurally
@@ -87,10 +87,11 @@ The paper (v1.4, June 2026) covers:
 - Cross-benchmark generalization
 - Why scaling failed and what that means
 - Self-critique: what's genuinely new vs. standard techniques applied to a new problem
+- The November 2026 measurement on live models: 66 settings, four kinds of job (Section 9.10)
 
 Convergence proofs and adversarial analysis are in the appendices.
 
-> v1.4 corrects the framing of the core equation. Under a log transform and softmax it is a constrained conditional logit (McFadden, 1974) with a log-sum compatibility term. The contribution is the parameterization for heterogeneous endpoint routing, its identifiability, convergence and regret analysis, and the production results. See paper/MCFADDEN_RESOLUTION.md and paper/ERRATA_QUEUE.md. The November 2026 measurements opened two more errata, SMT-ERR-004 and SMT-ERR-005. See [CHANGELOG.md](CHANGELOG.md) for details. Previous version: [v1.0 release](https://github.com/pranavlakherwal/smt-router/releases/tag/v1.0).
+> v1.5 (7 November 2026) resolves SMT-ERR-004 and SMT-ERR-005. It states that the production cost cut was reported with no measure of answer quality. It adds the accuracy bar as a sixth gate and reports the November 2026 measurement on live models. v1.4 (June 2026) corrected the framing of the core equation. Under a log transform and softmax it is a constrained conditional logit (McFadden, 1974) with a log-sum compatibility term. The contribution is the parameterization for heterogeneous endpoint routing, its identifiability, convergence and regret analysis, and the production results. See paper/MCFADDEN_RESOLUTION.md and paper/ERRATA_QUEUE.md. See [CHANGELOG.md](CHANGELOG.md) for details. Previous version: [v1.0 release](https://github.com/pranavlakherwal/smt-router/releases/tag/v1.0).
 
 ## Code
 
@@ -100,10 +101,13 @@ The routing engine needs Python 3.9 or later and `pydantic`. It reads two small 
 pip install "pydantic>=2"
 python examples/route_one.py        # one task, routed two ways, with the reasons
 python -m router options            # the three options for every measured kind of job
+python -m router route --kind maths --bar 95 "<task>"    # the recommended call
 python -m router route --kind science --bar 95 "Why does ice float on water?"
 python -m router table --kind exam --top 10
 pip install pytest && python -m pytest -q
 ```
+
+95 is the bar we use ourselves by default, decided 7 November 2026. Where no setting cleared 95 twice the command says so.
 
 ```python
 from router.engine import RoutingEngine
@@ -168,7 +172,7 @@ The learned scorer and its training and evaluation scripts need PyTorch and the 
 
 ## What we can say about reliability (6 November 2026)
 
-The benchmark table above is from the paper, June 2026: offline replays of public benchmarks, run once by us and not re-run since. Everything in this section is measured on our own systems, with the date, and it is labelled directional. No outside party has checked it.
+The benchmark table above is from the paper (first reported 25 March 2026, unchanged through v1.5): offline replays of public benchmarks, run once by us and not re-run since. Everything in this section is measured on our own systems, with the date, and it is labelled directional. No outside party has checked it.
 
 | Measure | Value | Date | Note |
 |---|---|---|---|
