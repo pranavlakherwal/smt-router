@@ -1,0 +1,45 @@
+\subsection{November 2026 Measurement on Live Models (added in version 1.5)}
+\label{sec:november_2026}
+
+This subsection reports the first measurement of answer quality behind this paper. Source: \path{docs/ROUTE_OPTIONS_2026-11.md} in the public repository at commit \texttt{8b5fd5f}, Tables 1, 3 and 6. Every table there is recounted from the files in \texttt{data/} by \texttt{python -m router report}. Measured by us on 5 and 6 November 2026. No outside party has checked it.
+
+\paragraph{What was measured.} 56 models in 66 settings answered 100 tasks on each of four kinds of job. The kinds: maths word problems (GSM8K), science questions (ARC-Challenge), checking a claim against a paper (SciFact), and a general knowledge exam (MMLU). A setting is a model with its request settings; \texttt{@think-off} is the same model with thinking switched off. All calls went through OpenRouter at list prices up to \$0.75 per million input tokens. A setting \emph{hits} a bar when its right answers on the 100 tasks reach it. For each kind and bar, the three cheapest settings that hit it answered 100 fresh tasks drawn with another seed. A setting \emph{holds} the bar when it reaches it again. The option at a bar is the cheapest setting that hit and held. No model checked an answer: the final number, letter or label had to match the key. Stored spend across both days was \$3.62 for about 28,600 stored replies.
+
+\paragraph{What the score picks, and what the bar picks.} Table~\ref{tab:november_2026} feeds the measured pass rates into the score of Equation~\ref{eq:smt} with no bar. It sets the result beside the cheapest setting that cleared 90, 95 and 98 twice. The score's pick is scored on the same tasks that set its pass rate, so the table flatters it.
+
+\begin{table}[h]
+\centering
+\caption{The score's pick against the cheapest setting that cleared each bar twice, per kind of job. Right answers out of 100 on the first tasks and on 100 fresh tasks; dollars per 1{,}000 tasks, measured on the first tasks. Source: \texttt{docs/ROUTE\_OPTIONS\_2026-11.md}, Tables 1, 3 and 6, 6 November 2026. ``None'' means no setting cleared that bar twice.}
+\label{tab:november_2026}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{p{2.3cm}llrrr}
+\toprule
+\textbf{Kind of job} & \textbf{Rule} & \textbf{Setting} & \textbf{First} & \textbf{Fresh} & \textbf{\$ per 1,000} \\
+\midrule
+\multirow{4}{2.3cm}{Maths word problems} & Score pick, no bar & \texttt{inclusionai/ling-3.0-flash} & 99 & 98 & 0.020 \\
+ & Cheapest at 90 & \texttt{inclusionai/ling-3.0-tiny@think-off} & 91 & 90 & 0.008 \\
+ & Cheapest at 95 & \texttt{inclusionai/ling-3.0-flash} & 99 & 98 & 0.020 \\
+ & Cheapest at 98 & \texttt{inclusionai/ling-3.0-flash} & 99 & 98 & 0.020 \\
+\midrule
+\multirow{4}{2.3cm}{Science questions} & Score pick, no bar & \texttt{inclusionai/ling-3.0-flash} & 98 & 96 & 0.021 \\
+ & Cheapest at 90 & \texttt{inclusionai/ling-3.0-tiny@think-off} & 94 & 91 & 0.007 \\
+ & Cheapest at 95 & \texttt{upstage/solar-mini4} & 96 & 95 & 0.017 \\
+ & Cheapest at 98 & \texttt{openai/gpt-6-luna} & 98 & 98 & 0.043 \\
+\midrule
+\multirow{4}{2.3cm}{Checking a claim against a paper} & Score pick, no bar & \texttt{google/gemma-4-31b-it} & 94 & 81 & 0.060 \\
+ & Cheapest at 90 & none & & & \\
+ & Cheapest at 95 & none & & & \\
+ & Cheapest at 98 & none & & & \\
+\midrule
+\multirow{4}{2.3cm}{General knowledge exam} & Score pick, no bar & \texttt{openai/gpt-6-luna} & 94 & 97 & 0.097 \\
+ & Cheapest at 90 & \texttt{inception/mercury-2.5@think-off} & 90 & 93 & 0.031 \\
+ & Cheapest at 95 & none & & & \\
+ & Cheapest at 98 & none & & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Erratum SMT-ERR-005: the score picks the most accurate setting, not the cheapest that does the job.} In the published code the exponential factor of Equation~\ref{eq:smt} is computed from the confidence of the phi scores, not from cost (\texttt{router/scorer.py}, \texttt{score\_endpoint}). Cost enters the score only through $\phi_{14}$, a function with five price tiers (\texttt{router/phi\_evaluators.py}). Of the 66 measured settings, 61 fall in one tier. So cost cannot separate them, and accuracy decides. On the exam the score picks a setting at \$0.097 per 1{,}000 tasks for 94 right; the cheapest setting that cleared 90 twice costs \$0.031. On maths, five settings tie on the top score; on science, eleven. The form can express a cost preference. As parameterized, it does not act on one among low-cost endpoints. The fix is the sixth gate of Section~\ref{sec:framework}: with a bar set, selection is by measured cost among the settings that cleared it twice. The erratum was opened on 6 November 2026 and is resolved in this version on 7 November 2026.
+
+\paragraph{Limits.} 100 tasks per kind gives wide intervals; the gap between 95 and 98 is three tasks. The task sets are public and old, so a model may have seen them in training. No setting passed 94 on claim checking or the exam. On 12 of those 200 tasks, at least four of the five strongest settings agree with each other against the answer key. Only the cheapest hits were sent to fresh tasks. No model above \$0.75 per million input tokens was measured. The learned bilinear scorer of Section~\ref{sec:learned_phi} has not been run on these tasks.

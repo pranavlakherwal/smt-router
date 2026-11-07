@@ -104,9 +104,17 @@ evidence:      docs/ROUTE_OPTIONS_2026-11.md finding 7; README.md, section "What
                sections/07d_production_validation.tex, the cost table and the free-tier item.
 claim_status:  weakened (the cost numbers stand as a replay of what the router would have
                spent; they say nothing about whether the routed answers were right)
-resolution:    v1.5 pass: state in 07d that quality was not measured; report the capability
-               sources by count; add the November measurement as the first quality reading.
-status:        OPEN
+resolution:    RESOLVED-IN-TEX in v1.5 (2026-11-07): new subsection "What This Section Did Not
+               Measure" at the end of sections/07d_production_validation.tex states that the
+               cost cut had no measure of answer quality beside it, reports the capability
+               sources by count (373 listed models: 35 own row, 56 sibling's row, 282 guessed
+               from price), and records the withdrawn free endpoint (244 of 400 November tasks);
+               new sections/07f_november_2026_measurement.tex reports the November 2026
+               measurement as the first quality reading; one sentence added to the main.tex
+               abstract pointing at both; the original claims kept in place. PDF recompiled;
+               SMT_Router_Paper_v1.5.pdf at the repo root, stamped (registration/). Published
+               Medium/Reddit copies NOT yet updated (owner action).
+status:        RESOLVED
 ```
 
 ```
@@ -127,7 +135,16 @@ evidence:      docs/ROUTE_OPTIONS_2026-11.md Table 6, printed by
 claim_status:  weakened (the form can express a cost preference; as parameterized it does
                not act on one among low-cost endpoints)
 resolution:    Code: an accuracy bar is now a gate and selection is by measured cost
-               (router/gates.py, router/engine.py, 6 November 2026). v1.5 pass: describe the
-               bar as a gate in Section 3 and report Table 6.
-status:        OPEN
+               (router/gates.py, router/engine.py, 6 November 2026).
+               RESOLVED-IN-TEX in v1.5 (2026-11-07): sections/03_framework.tex lists the
+               measured bar as the sixth gate (J=6) and adds the paragraph "Selection with a
+               bar set" (cheapest by measured cost among endpoints that cleared the bar twice;
+               the score is computed and does not choose); new
+               sections/07f_november_2026_measurement.tex reports Table 6 of
+               docs/ROUTE_OPTIONS_2026-11.md beside the options at 90, 95 and 98, and states
+               the erratum in one paragraph (confidence in the exponent, five price tiers,
+               61 of 66 in one tier, the score picks the most accurate). The phi_14 row and
+               the cost factor paragraph are kept as written. PDF recompiled;
+               SMT_Router_Paper_v1.5.pdf at the repo root, stamped (registration/).
+status:        RESOLVED
 ```

@@ -21,21 +21,26 @@ For an endpoint $M$ and task $T$, the compatibility score is:
 \label{eq:smt}
 \smt = \underbrace{\left[\prod_{j=1}^{J} g_j(M,T)\right]}_{\text{Gate layer}} \cdot \underbrace{\left[\sum_{i=1}^{K} w_i \cdot \phii(M,T)\right]}_{\text{Weighted compatibility}} \cdot \underbrace{e^{-\betavec(T) \cdot \mathbf{H}(M)}}_{\text{Cost penalty}}
 \end{equation}
-where $J=5$ binary gates, $K=16$ phi compatibility functions, and $d$-dimensional cost vector.
+where $J=6$ binary gates (five before version 1.5; the sixth is the measured accuracy bar below), $K=16$ phi compatibility functions, and $d$-dimensional cost vector.
 \end{definition}
 
 The three multiplicative components serve distinct roles:
 
 \paragraph{Gate Layer (Product-of-Experts).} Each gate $g_j: \mathcal{M} \times \mathcal{T} \to \{0, 1\}$ enforces a hard constraint. If any gate returns 0, the entire score is zeroed out. This implements a Product-of-Experts (PoE) architecture \citep{hinton1999poe} that eliminates the equal-scoring vulnerability of purely additive approaches, where a model catastrophically failing one requirement could still score well by excelling at others.
 
-The five gates are:
+The six gates are:
 \begin{enumerate}
     \item \textbf{Context window}: $g_1 = \mathbf{1}[c_M \geq \ell_T]$
     \item \textbf{Format support}: $g_2 = \mathbf{1}[\text{structured output supported if required}]$
     \item \textbf{Availability}: $g_3 = \mathbf{1}[M \text{ is currently reachable}]$
     \item \textbf{Budget}: $g_4 = \mathbf{1}[\text{estimated cost} \leq b_T]$
     \item \textbf{Thinking support}: $g_5 = \mathbf{1}[\text{CoT supported if required}]$
+    \item \textbf{Measured bar} (added in version 1.5): $g_6 = \mathbf{1}[\,a_T \text{ unset} \;\lor\; M \text{ cleared } a_T \text{ twice}\,]$, with $a_T$ the task's accuracy bar; ``cleared twice'' is defined in the next paragraph
 \end{enumerate}
+
+\paragraph{Selection with a bar set (version 1.5).}
+\label{par:bar_selection}
+A task may carry an accuracy bar $a_T$, such as 95 right answers in 100, for a kind of job that has been measured. The sixth gate then passes an endpoint only if it reached $a_T$ on 100 measured tasks of that kind and again on 100 fresh tasks. An endpoint with no measurement fails the gate: a bar asks for evidence. Among the endpoints that pass every gate, the engine selects the cheapest by measured cost per task. The score of Equation~\ref{eq:smt} is still computed and reported, and it does not choose. If no endpoint cleared the bar twice, the engine selects nothing and says so. Without a bar, $g_6 = 1$ for every endpoint and the highest score is selected, as in the rest of this section. Section~\ref{sec:november_2026} reports why the rule was added. Fed measured pass rates for 66 settings, the score picks the most accurate setting, not the cheapest that does the job (SMT-ERR-005). The rule is implemented in \texttt{router/gates.py} and \texttt{router/engine.py} at commit \texttt{8b5fd5f} of 6 November 2026. The bar we use ourselves by default is 95, decided on 7 November 2026.
 
 \paragraph{Weighted Compatibility Functions.} The phi functions $\phii: \mathcal{M} \times \mathcal{T} \to [0,1]$ capture different dimensions of model-task compatibility. The weight vector $\wvec = (w_1, \ldots, w_K)$ lies on the probability simplex $\Delta^{K-1}$, so $\sum_i w_i = 1$ and $w_i \geq 0$. This normalization ensures the weighted sum produces a $[0,1]$-bounded compatibility score.
 

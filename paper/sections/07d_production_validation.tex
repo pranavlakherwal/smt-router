@@ -217,3 +217,16 @@ This is not a bilinear-vs-scalar comparison in any clean sense. It is a \emph{be
 \end{itemize}
 
 The S(M,T) framework supports both. The V2 refinements (Section~\ref{sec:v2_refinements}) bring the production scalar's accounting up to the standard the bilinear naturally satisfies on its narrower corpus. Future work---particularly the V2 stochastic cost term applied to bilinear embeddings of agent endpoints, and the V2 type dispatch giving agents first-class phi vocabulary---would let a single architecture inherit the strengths of both. This is V3 territory.
+
+\subsection{What This Section Did Not Measure (added in version 1.5)}
+\label{sec:not_measured}
+
+This subsection records erratum SMT-ERR-004 of \texttt{paper/ERRATA\_QUEUE.md}, opened on 6 November 2026 and resolved in version 1.5 on 7 November 2026. The claims above are kept as written, and this is what they rest on.
+
+\textbf{The cost cut has no measure of answer quality beside it.} Table~\ref{tab:production_cost} reports a 94.68\% cut across 1{,}580 shadow decisions, with 68.7\% of decisions routed to free endpoints. No answer in that replay was checked. The outcome signals described under ``What Production Validates and What It Does Not'' are proxies (acceptance, continuation, error flow), not right-or-wrong answers. So the cost numbers say what the router would have spent. They say nothing about whether the routed answers were right.
+
+\textbf{The capability numbers were mostly not measured.} On 6 November 2026 the router's model list held 373 listed models. 35 had their own leaderboard row. 56 took a sibling's row, matched by name. 282 were a guess from the model's price. One model rated 0.24 for maths from its price scored 99 of 100 on the maths tasks of Section~\ref{sec:november_2026}.
+
+\textbf{The free endpoint had gone.} The free endpoint the router picked on 244 of the 400 November 2026 tasks had been withdrawn by its provider. A router that scores from a static list does not see that.
+
+Section~\ref{sec:november_2026} is the first reading of answer quality on live models. It covers four kinds of job and 66 settings, and its limits are stated there.

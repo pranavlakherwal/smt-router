@@ -1,11 +1,12 @@
 # Registration of the S(M,T) research on the Bitcoin blockchain
 
-Two proofs sit in this folder. Each is an OpenTimestamps file: it ties the SHA256 hash of a document to a Bitcoin block, so anyone can check that the document existed by that block's date. No third party is trusted. Nothing but the hash leaves this folder.
+Three proofs sit in this folder. Each is an OpenTimestamps file: it ties the SHA256 hash of a document to a Bitcoin block, so anyone can check that the document existed by that block's date. No third party is trusted. Nothing but the hash leaves this folder.
 
 | Document | SHA256 | Proof | Bitcoin block |
 |---|---|---|---|
 | The S(M,T) roadmap paper of July 2026 (the PDF stamped on 13 July 2026; kept in our records) | df4cc4b42e0c5e13fc148ccbe8e42de7cc67e5aa5416090595e205d3aaa9dd39 | SMT_ROADMAP_2026-07-13.pdf.ots | 957741 and 957754 |
-| SMT_Router_Paper_v1.4.pdf, the public paper in this repository | c9baaebe69691129ff60c097a6304c34d2943225d9d9b31f74445298930e0b4d | SMT_Router_Paper_v1.4.pdf.ots | pending on 3 November 2026; upgraded once the calendar's Bitcoin transaction confirms |
+| SMT_Router_Paper_v1.4.pdf, the public paper of June 2026, kept in this repository | c9baaebe69691129ff60c097a6304c34d2943225d9d9b31f74445298930e0b4d | SMT_Router_Paper_v1.4.pdf.ots | 974395, 974423 and 974430 (upgraded 4 November 2026) |
+| SMT_Router_Paper_v1.5.pdf, the public paper of 7 November 2026 | 97a91b9ca794db27399137fd215ad4faaaeff802c114f98837e2766a9bc07961 | SMT_Router_Paper_v1.5.pdf.ots | pending on 7 November 2026; upgraded once the calendar's Bitcoin transaction confirms |
 
 ## How to check, without installing anything
 
@@ -17,11 +18,13 @@ Two proofs sit in this folder. Each is an OpenTimestamps file: it ties the SHA25
 
 ```
 pip install opentimestamps-client
-ots upgrade SMT_Router_Paper_v1.4.pdf.ots      # fetch the completed proof from the calendar
-ots info SMT_Router_Paper_v1.4.pdf.ots         # shows the Bitcoin block height
-ots verify SMT_Router_Paper_v1.4.pdf.ots       # full check, needs a Bitcoin node
+ots upgrade SMT_Router_Paper_v1.5.pdf.ots      # fetch the completed proof from the calendar
+ots info SMT_Router_Paper_v1.5.pdf.ots         # shows the Bitcoin block height
+ots verify SMT_Router_Paper_v1.5.pdf.ots       # full check, needs a Bitcoin node
 ```
 
 **Attested 4 November 2026 (IST).** The public v1.4 PDF's proof sits in Bitcoin block 974395,974423,974430; the July 2026 roadmap PDF's proofs sit in blocks 957741 and 957754. `ots info` on each `.ots` prints its block.
+
+**Stamped 7 November 2026 (IST).** The public v1.5 PDF was submitted to four calendars on 7 November 2026. Its proof is pending until the calendar's Bitcoin transaction confirms; `ots upgrade` then writes the block into the `.ots` file.
 
 Registered by P0P (PnotP), Pranav Lakherwal. Method: OpenTimestamps, first used on 13 July 2026.
