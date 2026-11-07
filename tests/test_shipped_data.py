@@ -44,9 +44,14 @@ def test_the_commands_run_and_say_not_measured(capsys):
 
 
 def test_the_tables_in_the_note_and_the_readme_match_the_data():
+    """The README and the newest dated note carry the tables data/ prints today. An older note is that
+    month's record and keeps its own numbers, so only the newest one is held to the current data."""
     from router.report import fill
 
-    for name in ("docs/ROUTE_OPTIONS_2026-11.md", "README.md"):
-        text = (config.PROJECT_ROOT / name).read_text()
+    notes = sorted((config.PROJECT_ROOT / "docs").glob("ROUTE_OPTIONS_*.md"))
+    assert notes, "no dated note under docs/"
+    for path in (notes[-1], config.PROJECT_ROOT / "README.md"):
+        name = path.relative_to(config.PROJECT_ROOT)
+        text = path.read_text()
         assert "<!-- " in text, name
         assert fill(text) == text, f"{name} is out of step with data/: run python -m router report --fill {name}"
